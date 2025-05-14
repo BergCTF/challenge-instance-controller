@@ -1,10 +1,7 @@
 use std::{sync::Arc, time::Duration};
 
-use futures::{StreamExt, TryFuture};
-use k8s_openapi::{
-    api::core::v1::{ConfigMap, Namespace, Pod, Secret, Service},
-    Resource,
-};
+use futures::StreamExt;
+use k8s_openapi::api::core::v1::{ConfigMap, Namespace, Pod, Secret, Service};
 use kube::{
     runtime::{controller::Action, watcher, Controller},
     Api, Client,
@@ -96,6 +93,6 @@ pub async fn instrument() -> Result<(), kube::Error> {
 }
 
 // error policy to determine the action when the reconciliation fails
-fn error_policy(_object: Arc<ChallengeInstance>, _err: &error::Error, _ctx: Arc<()>) -> Action {
+fn error_policy(_object: Arc<ChallengeInstance>, _err: &error::Error, _ctx: Arc<ReconcilerContext>) -> Action {
     Action::requeue(Duration::from_secs(5))
 }

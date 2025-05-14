@@ -24,11 +24,13 @@ pub async fn reconcile(
     if !config.same_namespace {
         let namespace = generate_namespace(&obj);
         let patch_params = PatchParams::apply("challenge-instance-controller");
-        let namespace = ctx
+        let namespace_patch = serde_json::to_value(&namespace).map_err(|e| super::error::Error::SerializationError(e))?;
+        let patch = kube::api::Patch::Apply(&namespace_patch);
+        let _namespace = ctx
             .apis
             .namespaces
-            .patch(&namespace.name_any(), &patch_params, &namespace)
-            .await?;
+            .patch(&namespace.name_any(), &patch_params, &patch)
+            .await.map_err(|e| super::error::Error::KubeError(e))?;
     }
 
     Ok(Action::requeue(Duration::from_secs(3600)))

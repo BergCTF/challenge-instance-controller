@@ -1,0 +1,108 @@
+# Default values for berg-operator
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/norelect/berg-operator
+  pullPolicy: IfNotPresent
+  tag: ""  # Defaults to chart appVersion
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# Controller configuration
+config:
+  # Namespace where Challenge CRs are stored
+  challengeNamespace: berg
+
+  # Required: Base domain for instance hostnames
+  challengeDomain: "challenges.example.com"
+
+  # Gateway configuration
+  challengeHttpPort: 80
+  challengeTlsPort: 443
+  gatewayName: berg-gateway
+  gatewayNamespace: berg
+  challengeHttpListenerName: http
+  challengeTlsListenerName: tls
+
+  # Instance defaults
+  defaultTimeout: "2h"
+  defaultCpuLimit: "1000m"
+  defaultCpuRequest: "100m"
+  defaultMemoryLimit: "512Mi"
+  defaultMemoryRequest: "128Mi"
+  defaultEgressBandwidth: "10M"
+  defaultIngressBandwidth: "10M"
+
+  # Image configuration
+  imagePullPolicy: IfNotPresent
+  pullSecretName: ""
+  defaultRuntimeClassName: ""
+
+  # Features
+  additionalHeadlessService: false
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  name: ""
+
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: true
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  fsGroup: 65532
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Liveness probe configuration
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+  initialDelaySeconds: 15
+  periodSeconds: 20
+
+# Readiness probe configuration
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Logging configuration
+logLevel: info
+logFormat: json

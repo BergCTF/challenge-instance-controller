@@ -2,7 +2,7 @@ use crate::{crds::{Challenge, ChallengeInstance, ContainerSpec}, reconciler::Con
 use std::collections::BTreeMap;
 
 /// Generate standard labels for all resources
-pub fn common_labels(instance: &ChallengeInstance, challenge: &Challenge) -> BTreeMap<String, String> {
+pub fn common_labels(instance: &ChallengeInstance, _challenge: &Challenge) -> BTreeMap<String, String> {
     let mut labels = BTreeMap::new();
     labels.insert("app.kubernetes.io/managed-by".to_string(), "berg".to_string());
     labels.insert("app.kubernetes.io/component".to_string(), "challenge".to_string());

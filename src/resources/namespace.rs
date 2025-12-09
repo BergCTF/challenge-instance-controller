@@ -7,7 +7,7 @@ use crate::{
 use k8s_openapi::api::core::v1::{Namespace, Secret};
 use kube::{
     api::{Api, PostParams},
-    Client, ResourceExt,
+    Client,
 };
 use tracing::info;
 

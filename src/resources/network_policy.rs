@@ -8,10 +8,10 @@ use tracing::info;
 /// Create CiliumNetworkPolicy
 /// TODO: Implement full Cilium network policy in Phase 2
 pub async fn create(
-    instance: &ChallengeInstance,
-    challenge: &Challenge,
+    _instance: &ChallengeInstance,
+    _challenge: &Challenge,
     namespace: &str,
-    ctx: &Context,
+    _ctx: &Context,
 ) -> Result<()> {
     info!(
         "Network policy creation for {} - TODO: Implement Cilium CRD",

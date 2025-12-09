@@ -15,7 +15,7 @@ use std::collections::BTreeMap;
 use tracing::info;
 
 pub async fn create(
-    instance: &ChallengeInstance,
+    _instance: &ChallengeInstance,
     container: &ContainerSpec,
     namespace: &str,
     ctx: &Context,

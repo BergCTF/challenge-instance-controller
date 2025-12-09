@@ -2,16 +2,15 @@ use crate::{
     crds::{ChallengeInstance, ContainerSpec, DynamicFlag},
     error::{Error, Result},
     reconciler::Context,
-    resources::labels,
 };
 use k8s_openapi::api::core::v1::ConfigMap;
-use kube::{api::{Api, PostParams}, Resource};
+use kube::api::{Api, PostParams};
 use std::collections::BTreeMap;
 use tracing::info;
 
 pub async fn create_flag_configmap(
     instance: &ChallengeInstance,
-    container: &ContainerSpec,
+    _container: &ContainerSpec,
     dynamic_flag: &DynamicFlag,
     namespace: &str,
     ctx: &Context,
@@ -19,7 +18,7 @@ pub async fn create_flag_configmap(
     let api: Api<ConfigMap> = Api::namespaced(ctx.client.clone(), namespace);
 
     // Create ConfigMap for content flag
-    if let Some(ref content) = dynamic_flag.content {
+    if let Some(ref _content) = dynamic_flag.content {
         let flag_content = format!("{}\n", instance.spec.flag);
 
         let mut data = BTreeMap::new();
@@ -51,7 +50,7 @@ pub async fn create_flag_configmap(
     }
 
     // Create ConfigMap for executable flag
-    if let Some(ref executable) = dynamic_flag.executable {
+    if let Some(ref _executable) = dynamic_flag.executable {
         // For now, use a simple shell script wrapper (Phase 2 will have full ELF)
         let shell_script = format!("#!/bin/sh\necho '{}'\n", instance.spec.flag);
 

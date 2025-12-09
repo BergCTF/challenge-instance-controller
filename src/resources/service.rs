@@ -4,13 +4,13 @@ use crate::{
     reconciler::Context,
 };
 use k8s_openapi::api::core::v1::{Service, ServicePort, ServiceSpec};
-use kube::{api::{Api, PostParams}, Client};
+use kube::api::{Api, PostParams};
 use std::collections::BTreeMap;
 use tracing::info;
 
 pub async fn create(
-    instance: &ChallengeInstance,
-    challenge: &Challenge,
+    _instance: &ChallengeInstance,
+    _challenge: &Challenge,
     container: &ContainerSpec,
     namespace: &str,
     ctx: &Context,
@@ -70,7 +70,7 @@ pub async fn create(
 pub async fn discover_endpoints(
     instance: &ChallengeInstance,
     challenge: &Challenge,
-    namespace: &str,
+    _namespace: &str,
     ctx: &Context,
 ) -> Result<Vec<ServiceEndpoint>> {
     let mut endpoints = Vec::new();

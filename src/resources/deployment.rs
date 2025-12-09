@@ -10,7 +10,7 @@ use k8s_openapi::{
         apps::v1::{Deployment, DeploymentSpec},
         core::v1::{
             Capabilities, Container, EnvVar, Pod, PodSpec, PodTemplateSpec,
-            ResourceRequirements, SecurityContext, Volume, VolumeMount,
+            ResourceRequirements, SecurityContext,
         },
     },
     apimachinery::pkg::{
@@ -249,7 +249,7 @@ fn build_resources(container_spec: &ContainerSpec, ctx: &Context) -> ResourceReq
 }
 
 fn build_security_context(container_spec: &ContainerSpec) -> SecurityContext {
-    let mut capabilities_to_add = container_spec.additional_capabilities.clone();
+    let capabilities_to_add = container_spec.additional_capabilities.clone();
     let mut capabilities_to_drop = vec![];
 
     // Drop DAC_OVERRIDE if executable flag mode

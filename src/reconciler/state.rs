@@ -7,7 +7,7 @@ use crate::{
 use kube::{runtime::controller::Action, ResourceExt};
 use std::sync::Arc;
 use std::time::Duration;
-use tracing::{info, warn};
+use tracing::info;
 
 /// Pending → Creating transition
 pub async fn reconcile_pending(

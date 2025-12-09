@@ -1,0 +1,12 @@
+apiVersion: v2
+name: berg-operator
+description: Kubernetes operator for managing Berg CTF challenge instances
+type: application
+version: 0.1.0
+appVersion: 0.1.0
+keywords:
+  - ctf
+  - kubernetes-operator
+  - challenge-instance
+maintainers:
+  - name: Berg Team

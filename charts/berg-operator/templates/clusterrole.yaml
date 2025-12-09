@@ -1,0 +1,59 @@
+{{- if .Values.rbac.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "berg-operator.fullname" . }}
+  labels:
+    {{- include "berg-operator.labels" . | nindent 4 }}
+rules:
+  # ChallengeInstance management
+  - apiGroups: ["berg.norelect.ch"]
+    resources: ["challengeinstances"]
+    verbs: ["get", "list", "watch", "update", "patch", "delete"]
+  - apiGroups: ["berg.norelect.ch"]
+    resources: ["challengeinstances/status"]
+    verbs: ["get", "update", "patch"]
+  - apiGroups: ["berg.norelect.ch"]
+    resources: ["challengeinstances/finalizers"]
+    verbs: ["update"]
+
+  # Challenge read access
+  - apiGroups: ["berg.norelect.ch"]
+    resources: ["challenges"]
+    verbs: ["get", "list", "watch"]
+
+  # Namespace management
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # Core resources
+  - apiGroups: [""]
+    resources: ["services", "configmaps", "secrets", "pods"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # Deployments
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # PodDisruptionBudgets
+  - apiGroups: ["policy"]
+    resources: ["poddisruptionbudgets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # Gateway API
+  - apiGroups: ["gateway.networking.k8s.io"]
+    resources: ["httproutes", "tlsroutes"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # Cilium
+  - apiGroups: ["cilium.io"]
+    resources: ["ciliumnetworkpolicies"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # Events
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+{{- end }}

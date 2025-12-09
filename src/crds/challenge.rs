@@ -8,7 +8,17 @@ fn probe_schema(_gen: &mut SchemaGenerator) -> Schema {
     serde_json::from_value(serde_json::json!({
         "type": "object",
         "description": "Kubernetes probe configuration (exec, httpGet, tcpSocket, or grpc)",
+        "nullable": true,
         "x-kubernetes-preserve-unknown-fields": true
+    })).unwrap()
+}
+
+/// Schema for date-time strings
+fn datetime_schema(_gen: &mut SchemaGenerator) -> Schema {
+    serde_json::from_value(serde_json::json!({
+        "type": "string",
+        "format": "date-time",
+        "nullable": true
     })).unwrap()
 }
 
@@ -28,9 +38,15 @@ pub struct ChallengeSpec {
     pub flag: String,
     pub flag_format: String,
     pub dynamic_flag_mode: Option<DynamicFlagMode>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[schemars(schema_with = "datetime_schema")]
+    pub hide_until: Option<String>,
     pub difficulty: String,
+    pub static_value: Option<f64>,
     pub categories: Vec<String>,
+    #[serde(default)]
     pub tags: Vec<String>,
+    pub event: Option<String>,
     pub allow_outbound_traffic: bool,
     pub containers: Vec<ContainerSpec>,
     pub attachments: Option<Vec<AttachmentSpec>>,
@@ -57,8 +73,10 @@ pub struct ContainerSpec {
     #[serde(default)]
     pub additional_capabilities: Vec<String>,
     pub runtime_class_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     #[schemars(schema_with = "probe_schema")]
     pub readiness_probe: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     #[schemars(schema_with = "probe_schema")]
     pub liveness_probe: Option<serde_json::Value>,
     pub egress_bandwidth: Option<String>,
@@ -66,6 +84,7 @@ pub struct ContainerSpec {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct PortSpec {
     pub name: String,
     pub port: u16,
@@ -119,4 +138,6 @@ pub struct AttachmentSpec {
     pub file_name: String,
     pub download_url: Option<String>,
     pub download_image: Option<String>,
+    pub download_image_pull_secret: Option<String>,
+    pub download_image_insecure: Option<bool>,
 }

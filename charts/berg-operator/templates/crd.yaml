@@ -32,6 +32,12 @@ spec:
                     downloadImage:
                       nullable: true
                       type: string
+                    downloadImageInsecure:
+                      nullable: true
+                      type: boolean
+                    downloadImagePullSecret:
+                      nullable: true
+                      type: string
                     downloadUrl:
                       nullable: true
                       type: string
@@ -111,12 +117,13 @@ spec:
                       type: string
                     livenessProbe:
                       description: Kubernetes probe configuration (exec, httpGet, tcpSocket, or grpc)
+                      nullable: true
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
                     ports:
                       items:
                         properties:
-                          app_protocol:
+                          appProtocol:
                             nullable: true
                             type: string
                           name:
@@ -143,6 +150,7 @@ spec:
                       type: array
                     readinessProbe:
                       description: Kubernetes probe configuration (exec, httpGet, tcpSocket, or grpc)
+                      nullable: true
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
                     resourceLimits:
@@ -171,9 +179,7 @@ spec:
                   required:
                   - hostname
                   - image
-                  - livenessProbe
                   - ports
-                  - readinessProbe
                   type: object
                 type: array
               description:
@@ -189,11 +195,23 @@ spec:
                 - leetify
                 nullable: true
                 type: string
+              event:
+                nullable: true
+                type: string
               flag:
                 type: string
               flagFormat:
                 type: string
+              hideUntil:
+                format: date-time
+                nullable: true
+                type: string
+              staticValue:
+                format: double
+                nullable: true
+                type: number
               tags:
+                default: []
                 items:
                   type: string
                 type: array
@@ -206,7 +224,6 @@ spec:
             - difficulty
             - flag
             - flagFormat
-            - tags
             type: object
         required:
         - spec

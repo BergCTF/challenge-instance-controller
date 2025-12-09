@@ -1,7 +1,16 @@
 use kube::CustomResource;
-use schemars::JsonSchema;
+use schemars::{JsonSchema, gen::SchemaGenerator, schema::Schema};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+/// Schema for Kubernetes probe objects (liveness/readiness)
+fn probe_schema(_gen: &mut SchemaGenerator) -> Schema {
+    serde_json::from_value(serde_json::json!({
+        "type": "object",
+        "description": "Kubernetes probe configuration (exec, httpGet, tcpSocket, or grpc)",
+        "x-kubernetes-preserve-unknown-fields": true
+    })).unwrap()
+}
 
 /// Challenge resource (read-only from controller perspective)
 #[derive(CustomResource, Serialize, Deserialize, Clone, Debug, JsonSchema)]
@@ -48,7 +57,9 @@ pub struct ContainerSpec {
     #[serde(default)]
     pub additional_capabilities: Vec<String>,
     pub runtime_class_name: Option<String>,
+    #[schemars(schema_with = "probe_schema")]
     pub readiness_probe: Option<serde_json::Value>,
+    #[schemars(schema_with = "probe_schema")]
     pub liveness_probe: Option<serde_json::Value>,
     pub egress_bandwidth: Option<String>,
     pub ingress_bandwidth: Option<String>,

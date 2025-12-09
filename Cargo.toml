@@ -7,6 +7,10 @@ edition = "2021"
 name = "berg-operator"
 path = "src/main.rs"
 
+[[bin]]
+name = "crdgen"
+path = "src/bin/crdgen.rs"
+
 [lib]
 name = "berg_operator"
 path = "src/lib.rs"
@@ -20,6 +24,7 @@ kube-runtime = "0.97"
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+serde_yaml = "0.9"
 schemars = "0.8"
 
 # Async runtime

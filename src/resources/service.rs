@@ -1,5 +1,5 @@
 use crate::{
-    crds::{Challenge, ChallengeInstance, ContainerSpec, PortType, ServiceEndpoint},
+    crds::{Challenge, ChallengeInstance, ChallengeInstanceClass, ContainerSpec, PortType, ServiceEndpoint},
     error::Result,
     reconciler::Context,
 };
@@ -71,7 +71,8 @@ pub async fn discover_endpoints(
     instance: &ChallengeInstance,
     challenge: &Challenge,
     _namespace: &str,
-    ctx: &Context,
+    class: &ChallengeInstanceClass,
+    _ctx: &Context,
 ) -> Result<Vec<ServiceEndpoint>> {
     let mut endpoints = Vec::new();
 
@@ -84,7 +85,7 @@ pub async fn discover_endpoints(
                     // In a real implementation, we'd query the service to get the actual NodePort
                     endpoints.push(ServiceEndpoint {
                         name: port.name.clone(),
-                        hostname: ctx.config.challenge_domain.clone(),
+                        hostname: class.spec.gateway.domain.clone(),
                         port: port.port, // Simplified - should query actual NodePort
                         protocol: "TCP".to_string(),
                         app_protocol: port.app_protocol.clone(),
@@ -99,13 +100,13 @@ pub async fn discover_endpoints(
                                 "{}.{}.{}",
                                 instance_id,
                                 instance.spec.challenge_ref.name,
-                                ctx.config.challenge_domain
+                                class.spec.gateway.domain
                             )
                         } else {
-                            ctx.config.challenge_domain.clone()
+                            class.spec.gateway.domain.clone()
                         }
                     } else {
-                        ctx.config.challenge_domain.clone()
+                        class.spec.gateway.domain.clone()
                     };
 
                     let is_tls = port.r#type == PortType::PublicTlsRoute;
@@ -114,9 +115,9 @@ pub async fn discover_endpoints(
                         name: port.name.clone(),
                         hostname,
                         port: if is_tls {
-                            ctx.config.challenge_tls_port
+                            class.spec.gateway.tls_port
                         } else {
-                            ctx.config.challenge_http_port
+                            class.spec.gateway.http_port
                         },
                         protocol: "TCP".to_string(),
                         app_protocol: Some(if is_tls { "HTTPS".to_string() } else { "HTTP".to_string() }),

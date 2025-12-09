@@ -1,5 +1,5 @@
 use crate::{
-    crds::{Challenge, ChallengeInstance, ContainerSpec},
+    crds::{Challenge, ChallengeInstance, ChallengeInstanceClass, ContainerSpec},
     error::Result,
     flag,
     reconciler::Context,
@@ -30,11 +30,12 @@ pub async fn create(
     challenge: &Challenge,
     container_spec: &ContainerSpec,
     namespace: &str,
+    class: &ChallengeInstanceClass,
     ctx: &Context,
 ) -> Result<()> {
     let api: Api<Deployment> = Api::namespaced(ctx.client.clone(), namespace);
 
-    let deployment = build_deployment(instance, challenge, container_spec, namespace, ctx)?;
+    let deployment = build_deployment(instance, challenge, container_spec, namespace, class, ctx)?;
 
     match api.create(&PostParams::default(), &deployment).await {
         Ok(_) => {
@@ -57,7 +58,8 @@ fn build_deployment(
     challenge: &Challenge,
     container_spec: &ContainerSpec,
     namespace: &str,
-    ctx: &Context,
+    class: &ChallengeInstanceClass,
+    _ctx: &Context,
 ) -> Result<Deployment> {
     let container_name = &container_spec.hostname;
 
@@ -111,7 +113,7 @@ fn build_deployment(
     }
 
     // Build resource requirements
-    let resources = build_resources(container_spec, ctx);
+    let resources = build_resources(container_spec, class);
 
     // Build security context
     let security_context = build_security_context(container_spec);
@@ -120,7 +122,7 @@ fn build_deployment(
     let container = Container {
         name: container_name.clone(),
         image: Some(container_spec.image.clone()),
-        image_pull_policy: Some(ctx.config.image_pull_policy.clone()),
+        image_pull_policy: class.spec.image_pull.as_ref().map(|ip| ip.policy.clone()),
         env: if env_vars.is_empty() {
             None
         } else {
@@ -179,7 +181,7 @@ fn build_deployment(
             runtime_class_name: container_spec
                 .runtime_class_name
                 .clone()
-                .or_else(|| ctx.config.default_runtime_class_name.clone()),
+                .or_else(|| class.spec.security.as_ref().and_then(|s| s.runtime_class_name.clone())),
             enable_service_links: Some(false),
             automount_service_account_token: Some(false),
             termination_grace_period_seconds: Some(0),
@@ -207,21 +209,35 @@ fn build_deployment(
     })
 }
 
-fn build_resources(container_spec: &ContainerSpec, ctx: &Context) -> ResourceRequirements {
+fn build_resources(container_spec: &ContainerSpec, class: &ChallengeInstanceClass) -> ResourceRequirements {
     let mut limits = BTreeMap::new();
     let mut requests = BTreeMap::new();
+
+    // Get defaults from class
+    let default_cpu_limit = class.spec.default_resources.as_ref()
+        .and_then(|r| r.cpu_limit.clone())
+        .unwrap_or_else(|| "1000m".to_string());
+    let default_cpu_request = class.spec.default_resources.as_ref()
+        .and_then(|r| r.cpu_request.clone())
+        .unwrap_or_else(|| "100m".to_string());
+    let default_memory_limit = class.spec.default_resources.as_ref()
+        .and_then(|r| r.memory_limit.clone())
+        .unwrap_or_else(|| "512Mi".to_string());
+    let default_memory_request = class.spec.default_resources.as_ref()
+        .and_then(|r| r.memory_request.clone())
+        .unwrap_or_else(|| "128Mi".to_string());
 
     // CPU
     let cpu_limit = container_spec
         .resource_limits
         .as_ref()
         .and_then(|r| r.cpu.clone())
-        .unwrap_or_else(|| ctx.config.default_cpu_limit.clone());
+        .unwrap_or(default_cpu_limit);
     let cpu_request = container_spec
         .resource_requests
         .as_ref()
         .and_then(|r| r.cpu.clone())
-        .unwrap_or_else(|| ctx.config.default_cpu_request.clone());
+        .unwrap_or(default_cpu_request);
 
     limits.insert("cpu".to_string(), Quantity(cpu_limit));
     requests.insert("cpu".to_string(), Quantity(cpu_request));
@@ -231,12 +247,12 @@ fn build_resources(container_spec: &ContainerSpec, ctx: &Context) -> ResourceReq
         .resource_limits
         .as_ref()
         .and_then(|r| r.memory.clone())
-        .unwrap_or_else(|| ctx.config.default_memory_limit.clone());
+        .unwrap_or(default_memory_limit);
     let memory_request = container_spec
         .resource_requests
         .as_ref()
         .and_then(|r| r.memory.clone())
-        .unwrap_or_else(|| ctx.config.default_memory_request.clone());
+        .unwrap_or(default_memory_request);
 
     limits.insert("memory".to_string(), Quantity(memory_limit));
     requests.insert("memory".to_string(), Quantity(memory_request));

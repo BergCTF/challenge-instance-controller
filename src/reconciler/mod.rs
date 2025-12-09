@@ -1,6 +1,6 @@
 use crate::{
     config::ControllerConfig,
-    crds::{Challenge, ChallengeInstance, ChallengeInstanceStatus, Phase},
+    crds::{Challenge, ChallengeInstance, ChallengeInstanceClass, ChallengeInstanceStatus, Phase},
     error::{Error, Result},
     telemetry::Metrics,
 };
@@ -71,8 +71,9 @@ pub async fn reconcile(
         return timeout::terminate_expired(instance, ctx).await;
     }
 
-    // Fetch referenced Challenge
+    // Fetch referenced Challenge and ChallengeInstanceClass
     let challenge = fetch_challenge(&instance, &ctx).await?;
+    let class = fetch_instance_class(&instance, &ctx).await?;
 
     // Reconcile based on phase
     let phase = instance
@@ -82,10 +83,10 @@ pub async fn reconcile(
         .unwrap_or(&Phase::Pending);
 
     match phase {
-        Phase::Pending => state::reconcile_pending(instance, challenge, ctx).await,
-        Phase::Creating => state::reconcile_creating(instance, challenge, ctx).await,
-        Phase::Starting => state::reconcile_starting(instance, challenge, ctx).await,
-        Phase::Running => state::reconcile_running(instance, challenge, ctx).await,
+        Phase::Pending => state::reconcile_pending(instance, challenge, class, ctx).await,
+        Phase::Creating => state::reconcile_creating(instance, challenge, class, ctx).await,
+        Phase::Starting => state::reconcile_starting(instance, challenge, class, ctx).await,
+        Phase::Running => state::reconcile_running(instance, challenge, class, ctx).await,
         Phase::Terminating => state::reconcile_terminating(instance, ctx).await,
         Phase::Terminated | Phase::Failed => {
             // No action needed
@@ -115,6 +116,28 @@ async fn fetch_challenge(instance: &ChallengeInstance, ctx: &Context) -> Result<
             },
             e => Error::from(e),
         })
+}
+
+async fn fetch_instance_class(
+    instance: &ChallengeInstance,
+    ctx: &Context,
+) -> Result<ChallengeInstanceClass> {
+    let classes: Api<ChallengeInstanceClass> = Api::all(ctx.client.clone());
+
+    // Use specified class or default
+    let class_name = instance
+        .spec
+        .instance_class
+        .as_ref()
+        .map(|s| s.as_str())
+        .unwrap_or(&ctx.config.default_instance_class);
+
+    classes.get(class_name).await.map_err(|e| match e {
+        kube::Error::Api(ae) if ae.code == 404 => Error::InstanceClassNotFound {
+            name: class_name.to_string(),
+        },
+        e => Error::from(e),
+    })
 }
 
 async fn add_finalizer(instance: Arc<ChallengeInstance>, ctx: Arc<Context>) -> Result<Action> {

@@ -1,8 +1,8 @@
 use super::{update_status, Context};
 use crate::{
-    crds::{Challenge, ChallengeInstance, Condition, ConditionStatus, Phase},
+    crds::{Challenge, ChallengeInstance, ChallengeInstanceClass, Condition, ConditionStatus, Phase},
     error::Result,
-    resources, utils,
+    resources,
 };
 use kube::{runtime::controller::Action, ResourceExt};
 use std::sync::Arc;
@@ -13,6 +13,7 @@ use tracing::info;
 pub async fn reconcile_pending(
     instance: Arc<ChallengeInstance>,
     challenge: Challenge,
+    _class: ChallengeInstanceClass,
     ctx: Arc<Context>,
 ) -> Result<Action> {
     info!("Validating flag for instance {}", instance.name_any());
@@ -60,22 +61,25 @@ pub async fn reconcile_pending(
 pub async fn reconcile_creating(
     instance: Arc<ChallengeInstance>,
     challenge: Challenge,
+    class: ChallengeInstanceClass,
     ctx: Arc<Context>,
 ) -> Result<Action> {
     info!("Creating resources for instance {}", instance.name_any());
 
-    let namespace_name = utils::generate_namespace_name(&instance.spec.owner_id);
+    let namespace_name = class.spec.challenge_namespace.clone();
 
     // 1. Create namespace
     resources::namespace::create(&instance, &namespace_name, &ctx).await?;
 
     // 2. Copy image pull secret if configured
-    if let Some(ref secret_name) = ctx.config.pull_secret_name {
-        resources::namespace::copy_pull_secret(&ctx.client, secret_name, &namespace_name).await?;
+    if let Some(ref image_pull) = class.spec.image_pull {
+        if let Some(ref secret_name) = image_pull.secret_name {
+            resources::namespace::copy_pull_secret(&ctx.client, secret_name, &namespace_name).await?;
+        }
     }
 
     // 3. Create network policy
-    resources::network_policy::create(&instance, &challenge, &namespace_name, &ctx).await?;
+    resources::network_policy::create(&instance, &challenge, &namespace_name, &class, &ctx).await?;
 
     // 4. For each container, create resources
     for container in &challenge.spec.containers {
@@ -84,8 +88,8 @@ pub async fn reconcile_creating(
             .await?;
 
         // Gateway API routes
-        resources::gateway::create_http_routes(&instance, container, &namespace_name, &ctx).await?;
-        resources::gateway::create_tls_routes(&instance, container, &namespace_name, &ctx).await?;
+        resources::gateway::create_http_routes(&instance, container, &namespace_name, &class, &ctx).await?;
+        resources::gateway::create_tls_routes(&instance, container, &namespace_name, &class, &ctx).await?;
 
         // ConfigMaps for flags
         if let Some(ref dynamic_flag) = container.dynamic_flag {
@@ -103,7 +107,7 @@ pub async fn reconcile_creating(
         resources::pdb::create(&instance, container, &namespace_name, &ctx).await?;
 
         // Deployment
-        resources::deployment::create(&instance, &challenge, container, &namespace_name, &ctx)
+        resources::deployment::create(&instance, &challenge, container, &namespace_name, &class, &ctx)
             .await?;
     }
 
@@ -138,6 +142,7 @@ pub async fn reconcile_creating(
 pub async fn reconcile_starting(
     instance: Arc<ChallengeInstance>,
     challenge: Challenge,
+    class: ChallengeInstanceClass,
     ctx: Arc<Context>,
 ) -> Result<Action> {
     let namespace = instance
@@ -157,7 +162,7 @@ pub async fn reconcile_starting(
 
         // Discover service endpoints
         let endpoints =
-            resources::service::discover_endpoints(&instance, &challenge, namespace, &ctx).await?;
+            resources::service::discover_endpoints(&instance, &challenge, namespace, &class, &ctx).await?;
 
         let now = chrono::Utc::now().to_rfc3339();
         update_status(&instance, &ctx, |status| {
@@ -225,6 +230,7 @@ pub async fn reconcile_starting(
 pub async fn reconcile_running(
     instance: Arc<ChallengeInstance>,
     _challenge: Challenge,
+    _class: ChallengeInstanceClass,
     ctx: Arc<Context>,
 ) -> Result<Action> {
     // Check if expired (should be caught earlier, but double-check)

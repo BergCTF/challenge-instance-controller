@@ -34,6 +34,11 @@ pub struct ChallengeInstanceSpec {
     #[schemars(length(max = 1024))]
     pub flag: String,
 
+    /// ChallengeInstanceClass to use for this instance
+    /// If not specified, the default class will be used
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub instance_class: Option<String>,
+
     /// Duration after which instance auto-terminates (e.g., "2h", "30m")
     #[serde(default = "default_timeout")]
     #[schemars(regex(pattern = r"^([0-9]+h)?([0-9]+m)?([0-9]+s)?$"))]

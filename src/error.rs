@@ -13,6 +13,9 @@ pub enum Error {
     #[error("Challenge not found: {namespace}/{name}")]
     ChallengeNotFound { namespace: String, name: String },
 
+    #[error("ChallengeInstanceClass not found: {name}")]
+    InstanceClassNotFound { name: String },
+
     #[error("Flag validation failed: {0}")]
     FlagValidationError(String),
 

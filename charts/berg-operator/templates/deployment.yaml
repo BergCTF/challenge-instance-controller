@@ -37,48 +37,12 @@ spec:
         env:
         - name: RUST_LOG
           value: {{ .Values.logLevel }}
+        - name: DEFAULT_INSTANCE_CLASS
+          value: {{ .Values.instanceClass.name | quote }}
         - name: CHALLENGE_NAMESPACE
           value: {{ .Values.config.challengeNamespace | quote }}
-        - name: CHALLENGE_DOMAIN
-          value: {{ .Values.config.challengeDomain | quote }}
-        - name: CHALLENGE_HTTP_PORT
-          value: {{ .Values.config.challengeHttpPort | quote }}
-        - name: CHALLENGE_TLS_PORT
-          value: {{ .Values.config.challengeTlsPort | quote }}
-        - name: GATEWAY_NAME
-          value: {{ .Values.config.gatewayName | quote }}
-        - name: GATEWAY_NAMESPACE
-          value: {{ .Values.config.gatewayNamespace | quote }}
-        - name: CHALLENGE_HTTP_LISTENER_NAME
-          value: {{ .Values.config.challengeHttpListenerName | quote }}
-        - name: CHALLENGE_TLS_LISTENER_NAME
-          value: {{ .Values.config.challengeTlsListenerName | quote }}
-        - name: CHALLENGE_INSTANCE_TIMEOUT
-          value: {{ .Values.config.defaultTimeout | quote }}
-        - name: CHALLENGE_CPU_LIMIT
-          value: {{ .Values.config.defaultCpuLimit | quote }}
-        - name: CHALLENGE_CPU_REQUEST
-          value: {{ .Values.config.defaultCpuRequest | quote }}
-        - name: CHALLENGE_MEMORY_LIMIT
-          value: {{ .Values.config.defaultMemoryLimit | quote }}
-        - name: CHALLENGE_MEMORY_REQUEST
-          value: {{ .Values.config.defaultMemoryRequest | quote }}
-        - name: CHALLENGE_EGRESS_BANDWIDTH
-          value: {{ .Values.config.defaultEgressBandwidth | quote }}
-        - name: CHALLENGE_INGRESS_BANDWIDTH
-          value: {{ .Values.config.defaultIngressBandwidth | quote }}
-        - name: CHALLENGE_IMAGE_PULL_POLICY
-          value: {{ .Values.config.imagePullPolicy | quote }}
-        {{- if .Values.config.pullSecretName }}
-        - name: PULL_SECRET_NAME
-          value: {{ .Values.config.pullSecretName | quote }}
-        {{- end }}
-        {{- if .Values.config.defaultRuntimeClassName }}
-        - name: CHALLENGE_RUNTIME_CLASS_NAME
-          value: {{ .Values.config.defaultRuntimeClassName | quote }}
-        {{- end }}
-        - name: CHALLENGE_ADDITIONAL_HEADLESS_SERVICE
-          value: {{ .Values.config.additionalHeadlessService | quote }}
+        - name: DEFAULT_TIMEOUT
+          value: {{ .Values.instanceClass.defaultTimeout | quote }}
         resources:
           {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}

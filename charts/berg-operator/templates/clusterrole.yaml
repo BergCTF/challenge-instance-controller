@@ -22,6 +22,11 @@ rules:
     resources: ["challenges"]
     verbs: ["get", "list", "watch"]
 
+  # ChallengeInstanceClass read access
+  - apiGroups: ["berg.norelect.ch"]
+    resources: ["challengeinstanceclasses"]
+    verbs: ["get", "list", "watch"]
+
   # Namespace management
   - apiGroups: [""]
     resources: ["namespaces"]

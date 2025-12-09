@@ -40,6 +40,10 @@ kubectl apply -f "$SCRIPT_DIR/../../charts/berg-operator/templates/crd.yaml"
 echo "==> Creating test namespace..."
 kubectl create namespace berg-test || true
 
+# Install test ChallengeInstanceClass
+echo "==> Installing test ChallengeInstanceClass..."
+kubectl apply -f "$SCRIPT_DIR/../fixtures/test-instance-class.yaml"
+
 # Load operator image if it exists
 if docker images berg-operator:test | grep -q berg-operator; then
     echo "==> Loading operator image into kind..."

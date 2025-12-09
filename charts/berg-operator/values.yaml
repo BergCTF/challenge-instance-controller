@@ -11,38 +11,51 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
-# Controller configuration
+# Create a default ChallengeInstanceClass
+createInstanceClass: true
+
+# Controller configuration (simplified)
 config:
-  # Namespace where Challenge CRs are stored
+  # Namespace where Challenge CRs are stored (fallback)
   challengeNamespace: berg
 
-  # Required: Base domain for instance hostnames
-  challengeDomain: "challenges.example.com"
+# Gateway configuration (used by ChallengeInstanceClass)
+gateway:
+  name: "berg-gateway"
+  namespace: "berg-system"
+  httpListenerName: "http"
+  tlsListenerName: "tls"
+  domain: "challenges.example.com"
+  httpPort: 80
+  tlsPort: 443
 
-  # Gateway configuration
-  challengeHttpPort: 80
-  challengeTlsPort: 443
-  gatewayName: berg-gateway
-  gatewayNamespace: berg
-  challengeHttpListenerName: http
-  challengeTlsListenerName: tls
-
-  # Instance defaults
+# ChallengeInstanceClass configuration
+instanceClass:
+  name: standard
+  default: true
   defaultTimeout: "2h"
-  defaultCpuLimit: "1000m"
-  defaultCpuRequest: "100m"
-  defaultMemoryLimit: "512Mi"
-  defaultMemoryRequest: "128Mi"
-  defaultEgressBandwidth: "10M"
-  defaultIngressBandwidth: "10M"
 
-  # Image configuration
-  imagePullPolicy: IfNotPresent
-  pullSecretName: ""
-  defaultRuntimeClassName: ""
+  # Resource defaults for challenge instances
+  defaultResources:
+    cpuRequest: "100m"
+    cpuLimit: "1000m"
+    memoryRequest: "128Mi"
+    memoryLimit: "512Mi"
 
-  # Features
-  additionalHeadlessService: false
+  # Network configuration
+  network:
+    egressBandwidth: "10M"
+    ingressBandwidth: "10M"
+    additionalHeadlessService: false
+
+  # Image pull configuration
+  imagePull:
+    policy: "IfNotPresent"
+    # secretName: ""
+
+  # Security configuration
+  # security:
+  #   runtimeClassName: "gvisor"
 
 serviceAccount:
   # Specifies whether a service account should be created

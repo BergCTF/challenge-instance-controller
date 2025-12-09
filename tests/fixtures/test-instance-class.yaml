@@ -1,0 +1,23 @@
+apiVersion: berg.norelect.ch/v1
+kind: ChallengeInstanceClass
+metadata:
+  name: standard
+spec:
+  default: true
+  challengeNamespace: "berg-test"
+  gateway:
+    name: "test-gateway"
+    namespace: "berg-test"
+    httpListenerName: "http"
+    tlsListenerName: "tls"
+    domain: "test.local"
+    httpPort: 30080
+    tlsPort: 30443
+  defaultResources:
+    cpuRequest: "50m"
+    cpuLimit: "200m"
+    memoryRequest: "64Mi"
+    memoryLimit: "128Mi"
+  defaultTimeout: "1h"
+  imagePull:
+    policy: "IfNotPresent"

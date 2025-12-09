@@ -1,0 +1,52 @@
+{{- if .Values.createInstanceClass }}
+apiVersion: berg.norelect.ch/v1
+kind: ChallengeInstanceClass
+metadata:
+  name: {{ .Values.instanceClass.name }}
+spec:
+  default: {{ .Values.instanceClass.default }}
+  challengeNamespace: {{ .Values.config.challengeNamespace }}
+  gateway:
+    name: {{ .Values.gateway.name }}
+    namespace: {{ .Values.gateway.namespace }}
+    httpListenerName: {{ .Values.gateway.httpListenerName }}
+    tlsListenerName: {{ .Values.gateway.tlsListenerName }}
+    domain: {{ .Values.gateway.domain }}
+    httpPort: {{ .Values.gateway.httpPort }}
+    tlsPort: {{ .Values.gateway.tlsPort }}
+  {{- if .Values.instanceClass.defaultResources }}
+  defaultResources:
+    cpuRequest: {{ .Values.instanceClass.defaultResources.cpuRequest }}
+    cpuLimit: {{ .Values.instanceClass.defaultResources.cpuLimit }}
+    memoryRequest: {{ .Values.instanceClass.defaultResources.memoryRequest }}
+    memoryLimit: {{ .Values.instanceClass.defaultResources.memoryLimit }}
+  {{- end }}
+  {{- if .Values.instanceClass.network }}
+  network:
+    {{- if .Values.instanceClass.network.egressBandwidth }}
+    egressBandwidth: {{ .Values.instanceClass.network.egressBandwidth }}
+    {{- end }}
+    {{- if .Values.instanceClass.network.ingressBandwidth }}
+    ingressBandwidth: {{ .Values.instanceClass.network.ingressBandwidth }}
+    {{- end }}
+    {{- if hasKey .Values.instanceClass.network "additionalHeadlessService" }}
+    additionalHeadlessService: {{ .Values.instanceClass.network.additionalHeadlessService }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.instanceClass.imagePull }}
+  imagePull:
+    policy: {{ .Values.instanceClass.imagePull.policy }}
+    {{- if .Values.instanceClass.imagePull.secretName }}
+    secretName: {{ .Values.instanceClass.imagePull.secretName }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.instanceClass.security }}
+  security:
+    {{- if .Values.instanceClass.security.runtimeClassName }}
+    runtimeClassName: {{ .Values.instanceClass.security.runtimeClassName }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.instanceClass.defaultTimeout }}
+  defaultTimeout: {{ .Values.instanceClass.defaultTimeout }}
+  {{- end }}
+{{- end }}

@@ -1,7 +1,8 @@
 use crate::{
     crds::{
         cilium::{entities, CiliumEgressRule, CiliumL7Rule, CiliumPortProtocol, CiliumPortRule, CiliumDnsRule},
-        Challenge, ChallengeInstance, CiliumNetworkPolicy, CiliumNetworkPolicySpec,
+        Challenge, ChallengeInstance, ChallengeInstanceClass, CiliumNetworkPolicy,
+        CiliumNetworkPolicySpec,
     },
     error::{Error, Result},
     reconciler::Context,
@@ -16,6 +17,7 @@ pub async fn create(
     _instance: &ChallengeInstance,
     challenge: &Challenge,
     namespace: &str,
+    class: &ChallengeInstanceClass,
     ctx: &Context,
 ) -> Result<()> {
     let api: Api<CiliumNetworkPolicy> = Api::namespaced(ctx.client.clone(), namespace);
@@ -67,11 +69,11 @@ pub async fn create(
             to_ports: Some(vec![CiliumPortRule {
                 ports: Some(vec![
                     CiliumPortProtocol {
-                        port: Some(ctx.config.challenge_http_port.to_string()),
+                        port: Some(class.spec.gateway.http_port.to_string()),
                         protocol: None,
                     },
                     CiliumPortProtocol {
-                        port: Some(ctx.config.challenge_tls_port.to_string()),
+                        port: Some(class.spec.gateway.tls_port.to_string()),
                         protocol: None,
                     },
                 ]),

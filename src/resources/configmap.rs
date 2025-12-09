@@ -51,13 +51,13 @@ pub async fn create_flag_configmap(
 
     // Create ConfigMap for executable flag
     if let Some(ref _executable) = dynamic_flag.executable {
-        // For now, use a simple shell script wrapper (Phase 2 will have full ELF)
-        let shell_script = format!("#!/bin/sh\necho '{}'\n", instance.spec.flag);
+        // Generate minimal ELF executable that outputs the flag
+        let elf_binary = crate::flag::executable::generate_elf_executable(&instance.spec.flag)?;
 
         let mut binary_data = BTreeMap::new();
         binary_data.insert(
             "executable".to_string(),
-            k8s_openapi::ByteString(shell_script.into_bytes()),
+            k8s_openapi::ByteString(elf_binary),
         );
 
         let cm = ConfigMap {

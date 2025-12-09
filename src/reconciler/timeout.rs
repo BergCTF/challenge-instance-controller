@@ -32,6 +32,7 @@ pub fn calculate_expiry(timeout_str: &str) -> Result<String> {
 fn parse_timeout(timeout_str: &str) -> Result<Duration> {
     let mut total_seconds = 0i64;
     let mut current_num = String::new();
+    let mut found_valid_component = false;
 
     for ch in timeout_str.chars() {
         if ch.is_ascii_digit() {
@@ -53,13 +54,26 @@ fn parse_timeout(timeout_str: &str) -> Result<Duration> {
                 }
             }
 
+            found_valid_component = true;
             current_num.clear();
+        } else if !ch.is_whitespace() {
+            // Non-digit, non-whitespace character without a preceding number
+            return Err(Error::TimeoutParseError(format!(
+                "Invalid character '{}' in timeout string",
+                ch
+            )));
         }
     }
 
     if !current_num.is_empty() {
         return Err(Error::TimeoutParseError(
             "Timeout string must end with a unit (h/m/s)".to_string(),
+        ));
+    }
+
+    if !found_valid_component {
+        return Err(Error::TimeoutParseError(
+            "Timeout string must contain at least one time component (e.g., '2h', '30m')".to_string(),
         ));
     }
 

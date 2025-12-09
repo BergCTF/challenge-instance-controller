@@ -1,0 +1,79 @@
+name: Integration Tests
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  integration-test:
+    name: Integration Tests (Kind)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.22.0/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Install kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/kubectl
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'latest'
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-integration-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build operator image
+        run: docker build -t berg-operator:test -f Dockerfile .
+
+      - name: Set up kind cluster
+        run: ./tests/integration/setup-kind.sh
+
+      - name: Run integration tests
+        run: ./tests/integration/run-tests.sh
+
+      - name: Collect logs on failure
+        if: failure()
+        run: |
+          echo "==> Operator logs:"
+          kubectl logs -l app.kubernetes.io/name=berg-operator -n berg-test --tail=200 || true
+          echo ""
+          echo "==> ChallengeInstance status:"
+          kubectl get challengeinstance -n berg-test -o yaml || true
+          echo ""
+          echo "==> Events:"
+          kubectl get events -n berg-test --sort-by='.lastTimestamp' || true
+
+      - name: Clean up
+        if: always()
+        run: ./tests/integration/teardown-kind.sh

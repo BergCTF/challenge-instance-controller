@@ -83,6 +83,10 @@ pub async fn reconcile_creating(
         resources::service::create(&instance, &challenge, container, &namespace_name, &ctx)
             .await?;
 
+        // Gateway API routes
+        resources::gateway::create_http_routes(&instance, container, &namespace_name, &ctx).await?;
+        resources::gateway::create_tls_routes(&instance, container, &namespace_name, &ctx).await?;
+
         // ConfigMaps for flags
         if let Some(ref dynamic_flag) = container.dynamic_flag {
             resources::configmap::create_flag_configmap(

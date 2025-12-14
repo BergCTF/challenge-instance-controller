@@ -462,9 +462,6 @@ spec:
           spec:
             description: ChallengeInstanceClass defines configuration for ChallengeInstances Similar to StorageClass in Kubernetes, this allows different "tiers" of instances
             properties:
-              challengeNamespace:
-                description: Challenge namespace where instances will be created
-                type: string
               default:
                 default: false
                 description: Whether this is the default class
@@ -592,7 +589,6 @@ spec:
                     type: string
                 type: object
             required:
-            - challengeNamespace
             - gateway
             type: object
         required:

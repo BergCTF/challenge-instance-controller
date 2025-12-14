@@ -5,7 +5,6 @@ metadata:
   name: {{ .Values.instanceClass.name }}
 spec:
   default: {{ .Values.instanceClass.default }}
-  challengeNamespace: {{ .Values.config.challengeNamespace }}
   gateway:
     name: {{ .Values.gateway.name }}
     namespace: {{ .Values.gateway.namespace }}

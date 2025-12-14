@@ -2,7 +2,7 @@ use super::{update_status, Context};
 use crate::{
     crds::{Challenge, ChallengeInstance, ChallengeInstanceClass, Condition, ConditionStatus, Phase},
     error::Result,
-    resources,
+    resources, utils,
 };
 use kube::{runtime::controller::Action, ResourceExt};
 use std::sync::Arc;
@@ -66,7 +66,8 @@ pub async fn reconcile_creating(
 ) -> Result<Action> {
     info!("Creating resources for instance {}", instance.name_any());
 
-    let namespace_name = class.spec.challenge_namespace.clone();
+    // Generate unique namespace per owner
+    let namespace_name = utils::generate_namespace_name(&instance.spec.owner_id);
 
     // 1. Create namespace
     resources::namespace::create(&instance, &namespace_name, &ctx).await?;

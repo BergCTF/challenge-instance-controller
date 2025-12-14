@@ -4,7 +4,6 @@ metadata:
   name: standard
 spec:
   default: true
-  challengeNamespace: "berg-test"
   gateway:
     name: "test-gateway"
     namespace: "berg-test"

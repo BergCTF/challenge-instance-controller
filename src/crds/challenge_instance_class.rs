@@ -42,9 +42,6 @@ pub struct ChallengeInstanceClassSpec {
     /// Default timeout for instances using this class
     #[serde(skip_serializing_if = "Option::is_none")]
     pub default_timeout: Option<String>,
-
-    /// Challenge namespace where instances will be created
-    pub challenge_namespace: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]

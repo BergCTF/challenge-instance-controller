@@ -1,8 +1,8 @@
 use crate::{
     crds::{
-        ChallengeInstance, ChallengeInstanceClass, ContainerSpec, HTTPBackendRef, HTTPRoute,
-        HTTPRouteRule, HTTPRouteSpec, ParentReference, PortType, TLSRoute, TLSRouteRule,
-        TLSRouteSpec, BackendRef,
+        BackendRef, ChallengeInstance, ChallengeInstanceClass, ContainerSpec, HTTPBackendRef,
+        HTTPRoute, HTTPRouteRule, HTTPRouteSpec, ParentReference, PortType, TLSRoute, TLSRouteRule,
+        TLSRouteSpec,
     },
     error::{Error, Result},
     reconciler::Context,
@@ -36,12 +36,24 @@ pub async fn create_http_routes(
                     namespace: Some(namespace.to_string()),
                     labels: Some({
                         let mut labels = BTreeMap::new();
-                        labels.insert("app.kubernetes.io/managed-by".to_string(), "berg".to_string());
-                        labels.insert("app.kubernetes.io/component".to_string(), "http-route".to_string());
-                        labels.insert("berg.norelect.ch/hostname".to_string(), service_guid.to_string());
+                        labels.insert(
+                            "app.kubernetes.io/managed-by".to_string(),
+                            "berg".to_string(),
+                        );
+                        labels.insert(
+                            "app.kubernetes.io/component".to_string(),
+                            "http-route".to_string(),
+                        );
+                        labels.insert(
+                            "berg.norelect.ch/hostname".to_string(),
+                            service_guid.to_string(),
+                        );
                         if let Some(ref status) = instance.status {
                             if let Some(ref instance_id) = status.instance_id {
-                                labels.insert("berg.norelect.ch/instance-id".to_string(), instance_id.clone());
+                                labels.insert(
+                                    "berg.norelect.ch/instance-id".to_string(),
+                                    instance_id.clone(),
+                                );
                             }
                         }
                         labels
@@ -114,12 +126,24 @@ pub async fn create_tls_routes(
                     namespace: Some(namespace.to_string()),
                     labels: Some({
                         let mut labels = BTreeMap::new();
-                        labels.insert("app.kubernetes.io/managed-by".to_string(), "berg".to_string());
-                        labels.insert("app.kubernetes.io/component".to_string(), "tls-route".to_string());
-                        labels.insert("berg.norelect.ch/hostname".to_string(), service_guid.to_string());
+                        labels.insert(
+                            "app.kubernetes.io/managed-by".to_string(),
+                            "berg".to_string(),
+                        );
+                        labels.insert(
+                            "app.kubernetes.io/component".to_string(),
+                            "tls-route".to_string(),
+                        );
+                        labels.insert(
+                            "berg.norelect.ch/hostname".to_string(),
+                            service_guid.to_string(),
+                        );
                         if let Some(ref status) = instance.status {
                             if let Some(ref instance_id) = status.instance_id {
-                                labels.insert("berg.norelect.ch/instance-id".to_string(), instance_id.clone());
+                                labels.insert(
+                                    "berg.norelect.ch/instance-id".to_string(),
+                                    instance_id.clone(),
+                                );
                             }
                         }
                         labels

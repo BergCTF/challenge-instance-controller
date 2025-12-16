@@ -1,5 +1,7 @@
+use std::borrow::Cow;
+
 use kube::CustomResource;
-use schemars::JsonSchema;
+use schemars::{json_schema, JsonSchema, Schema};
 use serde::{Deserialize, Serialize};
 
 /// Wrapper type for RFC3339 datetime strings in CRDs
@@ -8,18 +10,15 @@ use serde::{Deserialize, Serialize};
 pub struct DateTime(pub String);
 
 impl JsonSchema for DateTime {
-    fn schema_name() -> String {
-        "DateTime".to_string()
+    fn schema_name() -> Cow<'static, str> {
+        "DateTime".into()
     }
 
-    fn json_schema(_gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
-        use schemars::schema::*;
-        SchemaObject {
-            instance_type: Some(InstanceType::String.into()),
-            format: Some("date-time".to_string()),
-            ..Default::default()
-        }
-        .into()
+    fn json_schema(_gen: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        json_schema!({
+            "type": "string",
+            "format": "date-time"
+        })
     }
 }
 
@@ -48,7 +47,9 @@ pub struct ChallengeInstanceSpec {
     pub challenge_ref: ChallengeRef,
 
     /// UUID of the owner (player/team)
-    #[schemars(regex(pattern = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"))]
+    #[schemars(regex(
+        pattern = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    ))]
     pub owner_id: String,
 
     /// Pre-generated flag for this instance

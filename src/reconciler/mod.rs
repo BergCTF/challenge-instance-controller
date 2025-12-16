@@ -1,6 +1,9 @@
 use crate::{
     config::ControllerConfig,
-    crds::{Challenge, ChallengeInstance, ChallengeInstanceClass, ChallengeInstanceStatus, DateTime, Phase},
+    crds::{
+        Challenge, ChallengeInstance, ChallengeInstanceClass, ChallengeInstanceStatus, DateTime,
+        Phase,
+    },
     error::{Error, Result},
     telemetry::Metrics,
 };
@@ -20,7 +23,6 @@ pub mod timeout;
 
 pub const FINALIZER: &str = "challengeinstance.berg.norelect.ch/finalizer";
 
-/// Context shared across reconciliation
 #[derive(Clone)]
 pub struct Context {
     pub client: Client,
@@ -28,12 +30,8 @@ pub struct Context {
     pub metrics: Arc<Metrics>,
 }
 
-/// Main reconciliation entry point
 #[instrument(skip(ctx, instance), fields(instance_name = %instance.name_any()))]
-pub async fn reconcile(
-    instance: Arc<ChallengeInstance>,
-    ctx: Arc<Context>,
-) -> Result<Action> {
+pub async fn reconcile(instance: Arc<ChallengeInstance>, ctx: Arc<Context>) -> Result<Action> {
     let ns = instance.namespace().unwrap();
     let name = instance.name_any();
 
@@ -190,11 +188,7 @@ async fn initialize_instance(
 }
 
 /// Helper to update status
-pub async fn update_status<F>(
-    instance: &ChallengeInstance,
-    ctx: &Context,
-    mutate: F,
-) -> Result<()>
+pub async fn update_status<F>(instance: &ChallengeInstance, ctx: &Context, mutate: F) -> Result<()>
 where
     F: FnOnce(&mut ChallengeInstanceStatus),
 {
@@ -220,11 +214,7 @@ where
 }
 
 /// Error handling for reconciliation
-pub fn error_policy(
-    _instance: Arc<ChallengeInstance>,
-    error: &Error,
-    ctx: Arc<Context>,
-) -> Action {
+pub fn error_policy(_instance: Arc<ChallengeInstance>, error: &Error, ctx: Arc<Context>) -> Action {
     error!("Reconciliation error: {:?}", error);
     ctx.metrics.record_error();
 

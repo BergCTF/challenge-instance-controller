@@ -1,5 +1,5 @@
 use kube::CustomResource;
-use schemars::{JsonSchema, gen::SchemaGenerator, schema::Schema};
+use schemars::{JsonSchema, Schema, SchemaGenerator};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -10,7 +10,8 @@ fn probe_schema(_gen: &mut SchemaGenerator) -> Schema {
         "description": "Kubernetes probe configuration (exec, httpGet, tcpSocket, or grpc)",
         "nullable": true,
         "x-kubernetes-preserve-unknown-fields": true
-    })).unwrap()
+    }))
+    .unwrap()
 }
 
 /// Schema for date-time strings
@@ -19,7 +20,8 @@ fn datetime_schema(_gen: &mut SchemaGenerator) -> Schema {
         "type": "string",
         "format": "date-time",
         "nullable": true
-    })).unwrap()
+    }))
+    .unwrap()
 }
 
 /// Challenge resource (read-only from controller perspective)

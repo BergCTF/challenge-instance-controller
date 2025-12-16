@@ -5,8 +5,8 @@ metadata:
 spec:
   default: true
   gateway: 
-    name: berg-internal
+    name: berg
     namespace: berg
-    tlsListenerName: tls
-    httpListenerName: http
+    tlsListenerName: tls-chall
+    httpListenerName: https-chall
     domain: challenges.swiss.dev

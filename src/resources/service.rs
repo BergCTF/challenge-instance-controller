@@ -97,9 +97,8 @@ pub async fn discover_endpoints(
                     let hostname = if let Some(ref status) = instance.status {
                         if let Some(ref instance_id) = status.instance_id {
                             format!(
-                                "{}.{}.{}",
+                                "{}.{}",
                                 instance_id,
-                                instance.spec.challenge_ref.name,
                                 class.spec.gateway.domain
                             )
                         } else {

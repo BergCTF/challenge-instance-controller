@@ -1,7 +1,7 @@
 apiVersion: berg.norelect.ch/v1
 kind: ChallengeInstanceClass
 metadata:
-  name: standard
+  name: default
 spec:
   default: true
   gateway: 

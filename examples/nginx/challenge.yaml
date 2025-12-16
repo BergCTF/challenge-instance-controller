@@ -11,7 +11,12 @@ spec:
   containers:
     - hostname: nginx
       image: nginx:alpine
-      ports: []
+      ports:
+        - port: 80
+          name: nginx
+          protocol: tcp
+          appProtocol: http
+          type: publicHttpRoute
   description: "Example NGINX challenge"
   difficulty: baby
   displayName: nginx

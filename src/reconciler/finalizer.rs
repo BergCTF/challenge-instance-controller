@@ -20,10 +20,18 @@ pub async fn cleanup(instance: Arc<ChallengeInstance>, ctx: Arc<Context>) -> Res
         if let Some(ref ns) = status.namespace {
             ns.clone()
         } else {
-            utils::generate_namespace_name(&instance.spec.owner_id)
+            utils::generate_namespace_name(
+                &ctx.config.namespace_prefix,
+                &instance.spec.challenge_ref.name,
+                &instance.spec.owner_id,
+            )
         }
     } else {
-        utils::generate_namespace_name(&instance.spec.owner_id)
+        utils::generate_namespace_name(
+            &ctx.config.namespace_prefix,
+            &instance.spec.challenge_ref.name,
+            &instance.spec.owner_id,
+        )
     };
 
     // Delete namespace (cascades to all resources)

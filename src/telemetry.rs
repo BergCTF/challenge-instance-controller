@@ -1,8 +1,5 @@
-/// Telemetry setup for tracing and metrics
-
 use std::sync::atomic::{AtomicU64, Ordering};
 
-/// Metrics for the controller
 #[derive(Debug, Default)]
 pub struct Metrics {
     pub reconcile_count: AtomicU64,
@@ -33,7 +30,6 @@ impl Metrics {
     }
 }
 
-/// Initialize tracing subscriber
 pub fn init() {
     tracing_subscriber::fmt()
         .with_env_filter(

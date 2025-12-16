@@ -13,6 +13,9 @@ pub struct ControllerConfig {
 
     /// Default timeout if not specified in instance or class
     pub default_timeout: String,
+
+    /// Namespace prefix for challenge instance namespaces
+    pub namespace_prefix: String,
 }
 
 impl ControllerConfig {
@@ -22,8 +25,8 @@ impl ControllerConfig {
                 .unwrap_or_else(|_| "standard".to_string()),
             challenge_namespace: env::var("CHALLENGE_NAMESPACE")
                 .unwrap_or_else(|_| "berg".to_string()),
-            default_timeout: env::var("DEFAULT_TIMEOUT")
-                .unwrap_or_else(|_| "2h".to_string()),
+            default_timeout: env::var("DEFAULT_TIMEOUT").unwrap_or_else(|_| "2h".to_string()),
+            namespace_prefix: env::var("NAMESPACE_PREFIX").unwrap_or_else(|_| "ci".to_string()),
         })
     }
 }

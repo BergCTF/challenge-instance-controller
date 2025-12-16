@@ -1,6 +1,9 @@
 use super::{update_status, Context};
 use crate::{
-    crds::{Challenge, ChallengeInstance, ChallengeInstanceClass, Condition, ConditionStatus, DateTime, Phase},
+    crds::{
+        Challenge, ChallengeInstance, ChallengeInstanceClass, Condition, ConditionStatus, DateTime,
+        Phase,
+    },
     error::Result,
     resources, utils,
 };
@@ -67,7 +70,11 @@ pub async fn reconcile_creating(
     info!("Creating resources for instance {}", instance.name_any());
 
     // Generate unique namespace per owner
-    let namespace_name = utils::generate_namespace_name(&instance.spec.owner_id);
+    let namespace_name = utils::generate_namespace_name(
+        &ctx.config.namespace_prefix,
+        challenge.metadata.name.as_ref().unwrap(),
+        &instance.spec.owner_id,
+    );
 
     // 1. Create namespace
     resources::namespace::create(&instance, &namespace_name, &ctx).await?;
@@ -75,7 +82,8 @@ pub async fn reconcile_creating(
     // 2. Copy image pull secret if configured
     if let Some(ref image_pull) = class.spec.image_pull {
         if let Some(ref secret_name) = image_pull.secret_name {
-            resources::namespace::copy_pull_secret(&ctx.client, secret_name, &namespace_name).await?;
+            resources::namespace::copy_pull_secret(&ctx.client, secret_name, &namespace_name)
+                .await?;
         }
     }
 
@@ -85,12 +93,13 @@ pub async fn reconcile_creating(
     // 4. For each container, create resources
     for container in &challenge.spec.containers {
         // Services
-        resources::service::create(&instance, &challenge, container, &namespace_name, &ctx)
-            .await?;
+        resources::service::create(&instance, &challenge, container, &namespace_name, &ctx).await?;
 
         // Gateway API routes
-        resources::gateway::create_http_routes(&instance, container, &namespace_name, &class, &ctx).await?;
-        resources::gateway::create_tls_routes(&instance, container, &namespace_name, &class, &ctx).await?;
+        resources::gateway::create_http_routes(&instance, container, &namespace_name, &class, &ctx)
+            .await?;
+        resources::gateway::create_tls_routes(&instance, container, &namespace_name, &class, &ctx)
+            .await?;
 
         // ConfigMaps for flags
         if let Some(ref dynamic_flag) = container.dynamic_flag {
@@ -108,8 +117,15 @@ pub async fn reconcile_creating(
         resources::pdb::create(&instance, container, &namespace_name, &ctx).await?;
 
         // Deployment
-        resources::deployment::create(&instance, &challenge, container, &namespace_name, &class, &ctx)
-            .await?;
+        resources::deployment::create(
+            &instance,
+            &challenge,
+            container,
+            &namespace_name,
+            &class,
+            &ctx,
+        )
+        .await?;
     }
 
     // Update status
@@ -163,7 +179,8 @@ pub async fn reconcile_starting(
 
         // Discover service endpoints
         let endpoints =
-            resources::service::discover_endpoints(&instance, &challenge, namespace, &class, &ctx).await?;
+            resources::service::discover_endpoints(&instance, &challenge, namespace, &class, &ctx)
+                .await?;
 
         let now = chrono::Utc::now().to_rfc3339();
         update_status(&instance, &ctx, |status| {
@@ -186,13 +203,14 @@ pub async fn reconcile_starting(
             .as_ref()
             .and_then(|s| s.expires_at.as_ref())
             .expect("expiresAt should be set");
-        let duration = if let Ok(expires_at) = chrono::DateTime::parse_from_rfc3339(&expires_at_dt.0) {
-            (expires_at.with_timezone(&chrono::Utc) - chrono::Utc::now())
-                .to_std()
-                .unwrap_or(Duration::from_secs(3600))
-        } else {
-            Duration::from_secs(3600)
-        };
+        let duration =
+            if let Ok(expires_at) = chrono::DateTime::parse_from_rfc3339(&expires_at_dt.0) {
+                (expires_at.with_timezone(&chrono::Utc) - chrono::Utc::now())
+                    .to_std()
+                    .unwrap_or(Duration::from_secs(3600))
+            } else {
+                Duration::from_secs(3600)
+            };
 
         Ok(Action::requeue(duration))
     } else {

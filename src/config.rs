@@ -1,8 +1,7 @@
 use crate::error::Result;
 use std::env;
 
-/// Simplified controller configuration
-/// Most configuration now comes from ChallengeInstanceClass resources
+// TODO: use config crate here
 #[derive(Clone, Debug)]
 pub struct ControllerConfig {
     /// Default ChallengeInstanceClass to use if none specified
@@ -22,7 +21,7 @@ impl ControllerConfig {
     pub fn from_env() -> Result<Self> {
         Ok(Self {
             default_instance_class: env::var("DEFAULT_INSTANCE_CLASS")
-                .unwrap_or_else(|_| "standard".to_string()),
+                .unwrap_or_else(|_| "default".to_string()),
             challenge_namespace: env::var("CHALLENGE_NAMESPACE")
                 .unwrap_or_else(|_| "berg".to_string()),
             default_timeout: env::var("DEFAULT_TIMEOUT").unwrap_or_else(|_| "2h".to_string()),

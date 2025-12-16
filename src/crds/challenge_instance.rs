@@ -2,6 +2,27 @@ use kube::CustomResource;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+/// Wrapper type for RFC3339 datetime strings in CRDs
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(transparent)]
+pub struct DateTime(pub String);
+
+impl JsonSchema for DateTime {
+    fn schema_name() -> String {
+        "DateTime".to_string()
+    }
+
+    fn json_schema(_gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+        use schemars::schema::*;
+        SchemaObject {
+            instance_type: Some(InstanceType::String.into()),
+            format: Some("date-time".to_string()),
+            ..Default::default()
+        }
+        .into()
+    }
+}
+
 /// ChallengeInstance is the primary resource managed by this controller
 #[derive(CustomResource, Serialize, Deserialize, Clone, Debug, JsonSchema)]
 #[kube(
@@ -79,14 +100,10 @@ pub struct ChallengeInstanceStatus {
     pub services: Vec<ServiceEndpoint>,
 
     /// Timestamps (RFC3339 format)
-    #[schemars(schema_with = "datetime_schema")]
-    pub started_at: Option<String>,
-    #[schemars(schema_with = "datetime_schema")]
-    pub ready_at: Option<String>,
-    #[schemars(schema_with = "datetime_schema")]
-    pub terminated_at: Option<String>,
-    #[schemars(schema_with = "datetime_schema")]
-    pub expires_at: Option<String>,
+    pub started_at: Option<DateTime>,
+    pub ready_at: Option<DateTime>,
+    pub terminated_at: Option<DateTime>,
+    pub expires_at: Option<DateTime>,
 
     /// Status conditions
     #[serde(default)]
@@ -123,8 +140,7 @@ pub struct ServiceEndpoint {
 pub struct Condition {
     pub r#type: String,
     pub status: ConditionStatus,
-    #[schemars(schema_with = "datetime_schema")]
-    pub last_transition_time: Option<String>,
+    pub last_transition_time: Option<DateTime>,
     pub reason: Option<String>,
     pub message: Option<String>,
 }
@@ -138,13 +154,4 @@ pub enum ConditionStatus {
 
 fn default_timeout() -> Option<String> {
     Some("2h".to_string())
-}
-
-fn datetime_schema(_gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
-    schemars::schema::SchemaObject {
-        instance_type: Some(schemars::schema::InstanceType::String.into()),
-        format: Some("date-time".to_string()),
-        ..Default::default()
-    }
-    .into()
 }

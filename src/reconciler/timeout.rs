@@ -12,8 +12,8 @@ use super::Context;
 /// Check if an instance has expired
 pub fn is_expired(instance: &ChallengeInstance) -> bool {
     if let Some(status) = &instance.status {
-        if let Some(ref expires_at_str) = status.expires_at {
-            if let Ok(expires_at) = DateTime::parse_from_rfc3339(expires_at_str) {
+        if let Some(ref expires_at_dt) = status.expires_at {
+            if let Ok(expires_at) = DateTime::parse_from_rfc3339(&expires_at_dt.0) {
                 return Utc::now() > expires_at.with_timezone(&Utc);
             }
         }

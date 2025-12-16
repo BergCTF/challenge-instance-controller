@@ -328,6 +328,7 @@ spec:
                   properties:
                     lastTransitionTime:
                       format: date-time
+                      nullable: true
                       type: string
                     message:
                       nullable: true
@@ -344,13 +345,13 @@ spec:
                     type:
                       type: string
                   required:
-                  - lastTransitionTime
                   - status
                   - type
                   type: object
                 type: array
               expiresAt:
                 format: date-time
+                nullable: true
                 type: string
               instanceId:
                 description: Generated UUID for this instance
@@ -379,6 +380,7 @@ spec:
                 type: string
               readyAt:
                 format: date-time
+                nullable: true
                 type: string
               services:
                 default: []
@@ -411,15 +413,12 @@ spec:
               startedAt:
                 description: Timestamps (RFC3339 format)
                 format: date-time
+                nullable: true
                 type: string
               terminatedAt:
                 format: date-time
+                nullable: true
                 type: string
-            required:
-            - expiresAt
-            - readyAt
-            - startedAt
-            - terminatedAt
             type: object
         required:
         - spec

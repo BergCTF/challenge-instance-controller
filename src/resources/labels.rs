@@ -37,6 +37,8 @@ pub fn namespace_labels(instance: &ChallengeInstance, ctx: &Context) -> BTreeMap
 /// Generate labels for pods
 pub fn pod_labels(instance: &ChallengeInstance, challenge: &Challenge, container: &ContainerSpec) -> BTreeMap<String, String> {
     let mut labels = common_labels(instance, challenge);
+    // Override component to match selector
+    labels.insert("app.kubernetes.io/component".to_string(), "challenge-pod".to_string());
     labels.insert("berg.norelect.ch/container".to_string(), container.hostname.clone());
     labels
 }

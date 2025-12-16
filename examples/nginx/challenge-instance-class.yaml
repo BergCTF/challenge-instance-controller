@@ -1,0 +1,12 @@
+apiVersion: berg.norelect.ch/v1
+kind: ChallengeInstanceClass
+metadata:
+  name: standard
+spec:
+  default: true
+  gateway: 
+    name: berg-internal
+    namespace: berg
+    tlsListenerName: tls
+    httpListenerName: http
+    domain: challenges.swiss.dev

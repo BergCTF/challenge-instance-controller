@@ -1,6 +1,6 @@
 use crate::{
     config::ControllerConfig,
-    crds::{Challenge, ChallengeInstance, ChallengeInstanceClass, ChallengeInstanceStatus, Phase},
+    crds::{Challenge, ChallengeInstance, ChallengeInstanceClass, ChallengeInstanceStatus, DateTime, Phase},
     error::{Error, Result},
     telemetry::Metrics,
 };
@@ -180,8 +180,8 @@ async fn initialize_instance(
     update_status(&instance, &ctx, |status| {
         status.instance_id = Some(instance_id);
         status.phase = Some(Phase::Pending);
-        status.started_at = Some(now);
-        status.expires_at = Some(expires_at);
+        status.started_at = Some(DateTime(now));
+        status.expires_at = Some(DateTime(expires_at));
     })
     .await?;
 

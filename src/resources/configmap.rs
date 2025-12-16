@@ -17,7 +17,6 @@ pub async fn create_flag_configmap(
 ) -> Result<()> {
     let api: Api<ConfigMap> = Api::namespaced(ctx.client.clone(), namespace);
 
-    // Create ConfigMap for content flag
     if let Some(ref _content) = dynamic_flag.content {
         let flag_content = format!("{}\n", instance.spec.flag);
 
@@ -30,8 +29,14 @@ pub async fn create_flag_configmap(
                 namespace: Some(namespace.to_string()),
                 labels: Some({
                     let mut labels = BTreeMap::new();
-                    labels.insert("app.kubernetes.io/managed-by".to_string(), "berg".to_string());
-                    labels.insert("app.kubernetes.io/component".to_string(), "flag-content".to_string());
+                    labels.insert(
+                        "app.kubernetes.io/managed-by".to_string(),
+                        "berg".to_string(),
+                    );
+                    labels.insert(
+                        "app.kubernetes.io/component".to_string(),
+                        "flag-content".to_string(),
+                    );
                     labels
                 }),
                 ..Default::default()
@@ -66,8 +71,14 @@ pub async fn create_flag_configmap(
                 namespace: Some(namespace.to_string()),
                 labels: Some({
                     let mut labels = BTreeMap::new();
-                    labels.insert("app.kubernetes.io/managed-by".to_string(), "berg".to_string());
-                    labels.insert("app.kubernetes.io/component".to_string(), "flag-executable".to_string());
+                    labels.insert(
+                        "app.kubernetes.io/managed-by".to_string(),
+                        "berg".to_string(),
+                    );
+                    labels.insert(
+                        "app.kubernetes.io/component".to_string(),
+                        "flag-executable".to_string(),
+                    );
                     labels
                 }),
                 ..Default::default()

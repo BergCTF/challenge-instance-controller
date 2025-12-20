@@ -1,6 +1,9 @@
 use crate::{
     crds::{
-        cilium::{entities, CiliumEgressRule, CiliumL7Rule, CiliumPortProtocol, CiliumPortRule, CiliumDnsRule},
+        cilium::{
+            entities, CiliumDnsRule, CiliumEgressRule, CiliumL7Rule, CiliumPortProtocol,
+            CiliumPortRule,
+        },
         Challenge, ChallengeInstance, ChallengeInstanceClass, CiliumNetworkPolicy,
         CiliumNetworkPolicySpec,
     },
@@ -28,7 +31,10 @@ pub async fn create(
             to_endpoints: Some(vec![LabelSelector {
                 match_labels: Some({
                     let mut labels = BTreeMap::new();
-                    labels.insert("k8s:io.kubernetes.pod.namespace".to_string(), "kube-system".to_string());
+                    labels.insert(
+                        "k8s:io.kubernetes.pod.namespace".to_string(),
+                        "kube-system".to_string(),
+                    );
                     labels.insert("k8s:k8s-app".to_string(), "kube-dns".to_string());
                     labels
                 }),
@@ -98,8 +104,14 @@ pub async fn create(
             namespace: Some(namespace.to_string()),
             labels: Some({
                 let mut labels = BTreeMap::new();
-                labels.insert("app.kubernetes.io/managed-by".to_string(), "berg".to_string());
-                labels.insert("app.kubernetes.io/component".to_string(), "network-policy".to_string());
+                labels.insert(
+                    "app.kubernetes.io/managed-by".to_string(),
+                    "berg".to_string(),
+                );
+                labels.insert(
+                    "app.kubernetes.io/component".to_string(),
+                    "network-policy".to_string(),
+                );
                 labels
             }),
             ..Default::default()

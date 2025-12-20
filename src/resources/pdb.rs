@@ -5,10 +5,7 @@ use crate::{
 };
 use k8s_openapi::{
     api::policy::v1::{PodDisruptionBudget, PodDisruptionBudgetSpec},
-    apimachinery::pkg::{
-        apis::meta::v1::LabelSelector,
-        util::intstr::IntOrString,
-    },
+    apimachinery::pkg::{apis::meta::v1::LabelSelector, util::intstr::IntOrString},
 };
 use kube::api::{Api, PostParams};
 use std::collections::BTreeMap;

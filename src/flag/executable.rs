@@ -1,4 +1,7 @@
-use crate::{crds::ExecutableFlag, error::{Error, Result}};
+use crate::{
+    crds::ExecutableFlag,
+    error::{Error, Result},
+};
 use k8s_openapi::api::core::v1::{ConfigMapVolumeSource, KeyToPath, Volume, VolumeMount};
 
 /// Build volume and mount for executable flag
@@ -69,29 +72,29 @@ pub fn generate_elf_executable(flag: &str) -> Result<Vec<u8>> {
     // ELF Header (64 bytes)
     elf.extend_from_slice(&[
         // e_ident
-        0x7f, 0x45, 0x4c, 0x46,          // ELF magic number
-        0x02,                             // 64-bit
-        0x01,                             // Little endian
-        0x01,                             // ELF version 1
-        0x00,                             // System V ABI
-        0x00, 0x00, 0x00, 0x00,          // ABI version + padding
-        0x00, 0x00, 0x00, 0x00,          // padding
+        0x7f, 0x45, 0x4c, 0x46, // ELF magic number
+        0x02, // 64-bit
+        0x01, // Little endian
+        0x01, // ELF version 1
+        0x00, // System V ABI
+        0x00, 0x00, 0x00, 0x00, // ABI version + padding
+        0x00, 0x00, 0x00, 0x00, // padding
     ]);
     elf.extend_from_slice(&[
-        0x02, 0x00,                      // e_type: ET_EXEC (executable)
-        0x3e, 0x00,                      // e_machine: x86-64
-        0x01, 0x00, 0x00, 0x00,          // e_version: 1
+        0x02, 0x00, // e_type: ET_EXEC (executable)
+        0x3e, 0x00, // e_machine: x86-64
+        0x01, 0x00, 0x00, 0x00, // e_version: 1
     ]);
     elf.extend_from_slice(&code_addr.to_le_bytes()); // e_entry: entry point
     elf.extend_from_slice(&[0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]); // e_phoff: program header offset (64)
     elf.extend_from_slice(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]); // e_shoff: section header offset (none)
     elf.extend_from_slice(&[0x00, 0x00, 0x00, 0x00]); // e_flags
-    elf.extend_from_slice(&[0x40, 0x00]);             // e_ehsize: ELF header size (64)
-    elf.extend_from_slice(&[0x38, 0x00]);             // e_phentsize: program header entry size (56)
-    elf.extend_from_slice(&[0x01, 0x00]);             // e_phnum: 1 program header
-    elf.extend_from_slice(&[0x00, 0x00]);             // e_shentsize: section header entry size (0)
-    elf.extend_from_slice(&[0x00, 0x00]);             // e_shnum: 0 section headers
-    elf.extend_from_slice(&[0x00, 0x00]);             // e_shstrndx: 0
+    elf.extend_from_slice(&[0x40, 0x00]); // e_ehsize: ELF header size (64)
+    elf.extend_from_slice(&[0x38, 0x00]); // e_phentsize: program header entry size (56)
+    elf.extend_from_slice(&[0x01, 0x00]); // e_phnum: 1 program header
+    elf.extend_from_slice(&[0x00, 0x00]); // e_shentsize: section header entry size (0)
+    elf.extend_from_slice(&[0x00, 0x00]); // e_shnum: 0 section headers
+    elf.extend_from_slice(&[0x00, 0x00]); // e_shstrndx: 0
 
     // Program Header (56 bytes) - PT_LOAD segment
     let file_size = (data_offset + flag_len as u64) as u64;
@@ -100,10 +103,10 @@ pub fn generate_elf_executable(flag: &str) -> Result<Vec<u8>> {
     elf.extend_from_slice(&[0x01, 0x00, 0x00, 0x00]); // p_type: PT_LOAD
     elf.extend_from_slice(&[0x05, 0x00, 0x00, 0x00]); // p_flags: PF_R | PF_X (readable + executable)
     elf.extend_from_slice(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]); // p_offset: 0
-    elf.extend_from_slice(&BASE_ADDR.to_le_bytes());  // p_vaddr
-    elf.extend_from_slice(&BASE_ADDR.to_le_bytes());  // p_paddr
-    elf.extend_from_slice(&file_size.to_le_bytes());  // p_filesz
-    elf.extend_from_slice(&mem_size.to_le_bytes());   // p_memsz
+    elf.extend_from_slice(&BASE_ADDR.to_le_bytes()); // p_vaddr
+    elf.extend_from_slice(&BASE_ADDR.to_le_bytes()); // p_paddr
+    elf.extend_from_slice(&file_size.to_le_bytes()); // p_filesz
+    elf.extend_from_slice(&mem_size.to_le_bytes()); // p_memsz
     elf.extend_from_slice(&[0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]); // p_align: 0x1000 (4KB)
 
     // Code section - x86_64 assembly
@@ -118,8 +121,8 @@ pub fn generate_elf_executable(flag: &str) -> Result<Vec<u8>> {
     //   syscall
 
     elf.extend_from_slice(&[
-        0x48, 0xc7, 0xc0, 0x01, 0x00, 0x00, 0x00,  // mov rax, 1
-        0x48, 0xc7, 0xc7, 0x01, 0x00, 0x00, 0x00,  // mov rdi, 1
+        0x48, 0xc7, 0xc0, 0x01, 0x00, 0x00, 0x00, // mov rax, 1
+        0x48, 0xc7, 0xc7, 0x01, 0x00, 0x00, 0x00, // mov rdi, 1
     ]);
 
     // mov rsi, <data_addr> - movabs rsi, <imm64>
@@ -131,10 +134,10 @@ pub fn generate_elf_executable(flag: &str) -> Result<Vec<u8>> {
     elf.extend_from_slice(&(flag_len as u32).to_le_bytes());
 
     elf.extend_from_slice(&[
-        0x0f, 0x05,                                 // syscall
-        0x48, 0xc7, 0xc0, 0x3c, 0x00, 0x00, 0x00,  // mov rax, 60 (exit)
-        0x48, 0x31, 0xff,                           // xor rdi, rdi
-        0x0f, 0x05,                                 // syscall
+        0x0f, 0x05, // syscall
+        0x48, 0xc7, 0xc0, 0x3c, 0x00, 0x00, 0x00, // mov rax, 60 (exit)
+        0x48, 0x31, 0xff, // xor rdi, rdi
+        0x0f, 0x05, // syscall
     ]);
 
     // Data section - the flag string
@@ -175,7 +178,7 @@ mod tests {
             "flag{a}",
             "flag{short}",
             "flag{this_is_a_longer_flag_for_testing}",
-            "flag{🚩}",  // Unicode
+            "flag{🚩}", // Unicode
         ];
 
         for flag in flags {

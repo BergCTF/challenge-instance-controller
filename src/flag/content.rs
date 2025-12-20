@@ -1,4 +1,7 @@
-use crate::{crds::ContentFlag, error::{Error, Result}};
+use crate::{
+    crds::ContentFlag,
+    error::{Error, Result},
+};
 use k8s_openapi::api::core::v1::{ConfigMapVolumeSource, KeyToPath, Volume, VolumeMount};
 
 /// Build volume and mount for content flag

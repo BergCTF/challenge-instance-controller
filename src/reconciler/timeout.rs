@@ -3,7 +3,11 @@ use crate::{
     error::{Error, Result},
 };
 use chrono::{DateTime, Duration, Utc};
-use kube::{api::{Api, DeleteParams}, runtime::controller::Action, ResourceExt};
+use kube::{
+    api::{Api, DeleteParams},
+    runtime::controller::Action,
+    ResourceExt,
+};
 use std::sync::Arc;
 use tracing::info;
 
@@ -38,9 +42,9 @@ fn parse_timeout(timeout_str: &str) -> Result<Duration> {
         if ch.is_ascii_digit() {
             current_num.push(ch);
         } else if !current_num.is_empty() {
-            let num: i64 = current_num
-                .parse()
-                .map_err(|_| Error::TimeoutParseError(format!("Invalid number: {}", current_num)))?;
+            let num: i64 = current_num.parse().map_err(|_| {
+                Error::TimeoutParseError(format!("Invalid number: {}", current_num))
+            })?;
 
             match ch {
                 'h' => total_seconds += num * 3600,
@@ -73,7 +77,8 @@ fn parse_timeout(timeout_str: &str) -> Result<Duration> {
 
     if !found_valid_component {
         return Err(Error::TimeoutParseError(
-            "Timeout string must contain at least one time component (e.g., '2h', '30m')".to_string(),
+            "Timeout string must contain at least one time component (e.g., '2h', '30m')"
+                .to_string(),
         ));
     }
 
@@ -120,7 +125,10 @@ mod tests {
 
     #[test]
     fn test_parse_timeout() {
-        assert_eq!(parse_timeout("2h").unwrap(), Duration::try_hours(2).unwrap());
+        assert_eq!(
+            parse_timeout("2h").unwrap(),
+            Duration::try_hours(2).unwrap()
+        );
         assert_eq!(
             parse_timeout("30m").unwrap(),
             Duration::try_minutes(30).unwrap()

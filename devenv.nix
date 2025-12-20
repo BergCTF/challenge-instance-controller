@@ -15,6 +15,11 @@
     pkgs.kubernetes-helm
     pkgs.kubectl
     pkgs.kind
+
+    pkgs.cargo-outdated
+    pkgs.cargo-machete
+    pkgs.cargo-edit
+    pkgs.cargo-insta
   ];
 
   # https://devenv.sh/languages/

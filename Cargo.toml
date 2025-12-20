@@ -20,8 +20,6 @@ path = "src/lib.rs"
 # Kubernetes client and runtime
 kube = { version = "2.0", features = ["runtime", "derive", "client", "ws"] }
 k8s-openapi = { version = "0.26", features = ["v1_34", "schemars"] }
-gateway-api = { version = "0.19", features = ["experimental"] }
-kube-runtime = "2.0"
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }

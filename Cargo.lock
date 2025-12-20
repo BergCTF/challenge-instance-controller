@@ -115,10 +115,8 @@ dependencies = [
  "anyhow",
  "chrono",
  "futures",
- "gateway-api",
  "k8s-openapi",
  "kube",
- "kube-runtime",
  "rand 0.8.5",
  "schemars",
  "serde",
@@ -279,17 +277,6 @@ name = "data-encoding"
 version = "2.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2a2330da5de22e8a3cb63252ce2abb30116bf5265e89c0e01bc17015ce30a476"
-
-[[package]]
-name = "delegate"
-version = "0.13.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "780eb241654bf097afb00fc5f054a09b687dad862e485fdcf8399bb056565370"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
 
 [[package]]
 name = "derive_more"
@@ -513,23 +500,6 @@ dependencies = [
  "pin-project-lite",
  "pin-utils",
  "slab",
-]
-
-[[package]]
-name = "gateway-api"
-version = "0.19.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22945b64cd520921b037a237f2ad62c4491993e5d1ab01156269922430486d63"
-dependencies = [
- "delegate",
- "k8s-openapi",
- "kube",
- "once_cell",
- "regex-lite",
- "schemars",
- "serde",
- "serde_json",
- "serde_yaml",
 ]
 
 [[package]]
@@ -1301,12 +1271,6 @@ dependencies = [
  "memchr",
  "regex-syntax",
 ]
-
-[[package]]
-name = "regex-lite"
-version = "0.1.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d942b98df5e658f56f20d592c7f868833fe38115e65c33003d8cd224b0155da"
 
 [[package]]
 name = "regex-syntax"

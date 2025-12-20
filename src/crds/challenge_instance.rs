@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use kube::CustomResource;
-use schemars::{json_schema, JsonSchema, Schema};
+use schemars::{json_schema, JsonSchema};
 use serde::{Deserialize, Serialize};
 
 /// Wrapper type for RFC3339 datetime strings in CRDs

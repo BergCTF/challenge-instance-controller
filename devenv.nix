@@ -45,6 +45,20 @@
 
   # https://devenv.sh/git-hooks/
   # git-hooks.hooks.shellcheck.enable = true;
+  git-hooks.hooks = {
+    # github actions
+    actionlint.enable = true;
+    action-validator.enable = true;
+
+    # rust
+    clippy.enable = true;
+    clippy.settings.allFeatures = true;
+    cargo-check.enable = true;
+    rustfmt.enable = true;
+
+    # helm
+    chart-testing.enable = true;
+  };
 
   # See full reference at https://devenv.sh/reference/options/
 }

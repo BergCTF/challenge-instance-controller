@@ -15,14 +15,12 @@ spec:
         - name: http
           port: 80
           type: internalPort
-      resources:
-        requests:
-          cpu: "100m"
-          memory: "64Mi"
-        limits:
-          cpu: "200m"
-          memory: "128Mi"
+      resourceRequests:
+        cpu: "100m"
+        memory: "64Mi"
+      resourceLimits:
+        cpu: "200m"
+        memory: "128Mi"
       dynamicFlag:
-        mode: content
         content:
           path: "/usr/share/nginx/html/flag.txt"

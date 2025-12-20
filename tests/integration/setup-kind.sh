@@ -33,8 +33,8 @@ echo "==> Waiting for cluster to be ready..."
 kubectl wait --for=condition=Ready nodes --all --timeout=60s
 
 # Install CRDs
-echo "==> Installing CRDs..."
-kubectl apply -f "$SCRIPT_DIR/../../charts/berg-operator/templates/crd.yaml"
+# echo "==> Installing CRDs..."
+# kubectl apply -f "$SCRIPT_DIR/../../charts/berg-operator/templates/crd.yaml"
 
 # Create test namespace
 echo "==> Creating test namespace..."

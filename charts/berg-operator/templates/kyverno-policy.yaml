@@ -1,5 +1,6 @@
 # validating policy only allowing the operator to create/delete namespaces with the 
 # challenge prefix
+{{- if .Values.hardened }}
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
@@ -44,3 +45,4 @@ spec:
               - key: '{{ "{{" }} request.oldObject.metadata.labels.managed-by {{ "}}" }}'
                 operator: NotEquals
                 value: berg-controller-{{ include "berg-operator.fullname" . }}
+{{- end }}

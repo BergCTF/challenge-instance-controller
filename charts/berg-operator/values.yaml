@@ -2,6 +2,9 @@
 
 replicaCount: 1
 
+# hardened deployment. enables kyverno policies and uses rbac manager, disables cluster wide access for berg challenge instance controller.
+hardened: false
+
 image:
   repository: ghcr.io/norelect/berg-operator
   pullPolicy: IfNotPresent

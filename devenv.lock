@@ -654,6 +654,23 @@
         "type": "github"
       }
     },
+    "kind-service": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_6"
+      },
+      "locked": {
+        "lastModified": 1766252362,
+        "owner": "cfi2017",
+        "repo": "devenv-kind-service-overlay",
+        "rev": "a2f22d6a4c1727ac9f6344ba8bddf1d256c0190a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "cfi2017",
+        "repo": "devenv-kind-service-overlay",
+        "type": "github"
+      }
+    },
     "nix-test-runner": {
       "flake": false,
       "locked": {
@@ -772,6 +789,21 @@
     },
     "nixpkgs_6": {
       "locked": {
+        "lastModified": 1766070988,
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "c6245e83d836d0433170a16eb185cefe0572f8b8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_7": {
+      "locked": {
         "lastModified": 1764580874,
         "owner": "cachix",
         "repo": "devenv-nixpkgs",
@@ -871,7 +903,8 @@
         "crate2nix": "crate2nix",
         "devenv": "devenv",
         "git-hooks": "git-hooks_4",
-        "nixpkgs": "nixpkgs_6",
+        "kind-service": "kind-service",
+        "nixpkgs": "nixpkgs_7",
         "pre-commit-hooks": [
           "git-hooks"
         ]

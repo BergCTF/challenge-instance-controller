@@ -79,7 +79,51 @@ fn build_deployment(
         ..Default::default()
     });
 
-    // TODO: verify we push service endpoints here
+    for container in &challenge.spec.containers {
+        for port in &container.ports {
+            let env_name = format!("{}_ENDPOINT", port.name.to_uppercase());
+            let service_name = format!("{}-{}", container.hostname, port.name);
+
+            let endpoint_value = match port.r#type {
+                crate::crds::PortType::InternalPort => {
+                    format!("{}:{}", service_name, port.port)
+                }
+                crate::crds::PortType::PublicPort => {
+                    format!("{}:{}", class.spec.gateway.domain, port.port)
+                }
+                crate::crds::PortType::PublicHttpRoute => {
+                    let hostname = if let Some(ref status) = instance.status {
+                        if let Some(ref instance_id) = status.instance_id {
+                            format!("{}.{}", instance_id, class.spec.gateway.domain)
+                        } else {
+                            class.spec.gateway.domain.clone()
+                        }
+                    } else {
+                        class.spec.gateway.domain.clone()
+                    };
+                    format!("{}:{}", hostname, class.spec.gateway.http_port)
+                }
+                crate::crds::PortType::PublicTlsRoute => {
+                    let hostname = if let Some(ref status) = instance.status {
+                        if let Some(ref instance_id) = status.instance_id {
+                            format!("{}.{}", instance_id, class.spec.gateway.domain)
+                        } else {
+                            class.spec.gateway.domain.clone()
+                        }
+                    } else {
+                        class.spec.gateway.domain.clone()
+                    };
+                    format!("{}:{}", hostname, class.spec.gateway.tls_port)
+                }
+            };
+
+            env_vars.push(EnvVar {
+                name: env_name,
+                value: Some(endpoint_value),
+                ..Default::default()
+            });
+        }
+    }
 
     // Add flag if env mode
     if let Some(ref dynamic_flag) = container_spec.dynamic_flag {
@@ -117,6 +161,18 @@ fn build_deployment(
     // Build security context
     let security_context = build_security_context(container_spec);
 
+    // Build container ports
+    let container_ports = container_spec
+        .ports
+        .iter()
+        .map(|p| k8s_openapi::api::core::v1::ContainerPort {
+            name: Some(p.name.clone()),
+            container_port: p.port as i32,
+            protocol: Some(p.protocol.to_uppercase()),
+            ..Default::default()
+        })
+        .collect::<Vec<_>>();
+
     // Build container
     let container = Container {
         name: container_name.clone(),
@@ -127,7 +183,11 @@ fn build_deployment(
         } else {
             Some(env_vars)
         },
-        // TODO: where are my ports
+        ports: if container_ports.is_empty() {
+            None
+        } else {
+            Some(container_ports)
+        },
         volume_mounts: if volume_mounts.is_empty() {
             None
         } else {
@@ -181,7 +241,16 @@ fn build_deployment(
             } else {
                 Some(volumes)
             },
-            // TODO: verify image pull secrets
+            image_pull_secrets: class
+                .spec
+                .image_pull
+                .as_ref()
+                .and_then(|ip| ip.secret_name.as_ref())
+                .map(|secret_name| {
+                    vec![k8s_openapi::api::core::v1::LocalObjectReference {
+                        name: secret_name.clone(),
+                    }]
+                }),
             runtime_class_name: container_spec.runtime_class_name.clone().or_else(|| {
                 class
                     .spec

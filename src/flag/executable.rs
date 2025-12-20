@@ -97,7 +97,7 @@ pub fn generate_elf_executable(flag: &str) -> Result<Vec<u8>> {
     elf.extend_from_slice(&[0x00, 0x00]); // e_shstrndx: 0
 
     // Program Header (56 bytes) - PT_LOAD segment
-    let file_size = (data_offset + flag_len as u64);
+    let file_size = data_offset + flag_len as u64;
     let mem_size = file_size;
 
     elf.extend_from_slice(&[0x01, 0x00, 0x00, 0x00]); // p_type: PT_LOAD

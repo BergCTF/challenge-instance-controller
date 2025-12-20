@@ -3,8 +3,6 @@ description: Checkout repo, install Nix, configure Cachix, and install devenv
 runs:
   using: composite
   steps:
-    - name: Checkout
-      uses: actions/checkout@v5
     - name: Install Nix
       uses: cachix/install-nix-action@v31
     - name: Configure Cachix

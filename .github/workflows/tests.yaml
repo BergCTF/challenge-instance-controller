@@ -1,0 +1,34 @@
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/setup
+
+      - name: Run tests
+        run: devenv test
+
+  build:
+    runs-on: ubuntu-latest
+    needs: tests
+    steps:
+      - uses: ./.github/actions/setup
+
+      - name: Build container images
+        run: devenv tasks run build:release
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    environment: integration-tests
+    steps:
+      - uses: ./.github/actions/setup
+
+      - name: Run integration tests
+        run: devenv tasks run tests:integration

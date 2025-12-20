@@ -130,6 +130,7 @@ spec:
                             type: string
                           port:
                             format: uint16
+                            maximum: 65535.0
                             minimum: 0.0
                             type: integer
                           protocol:
@@ -193,6 +194,7 @@ spec:
                 enum:
                 - suffix
                 - leetify
+                - null
                 nullable: true
                 type: string
               event:
@@ -292,7 +294,9 @@ spec:
                 maxLength: 1024
                 type: string
               instanceClass:
-                description: ChallengeInstanceClass to use for this instance If not specified, the default class will be used
+                description: |-
+                  ChallengeInstanceClass to use for this instance
+                  If not specified, the default class will be used
                 nullable: true
                 type: string
               ownerId:
@@ -305,6 +309,7 @@ spec:
                 - UserRequest
                 - Timeout
                 - AdminTermination
+                - null
                 nullable: true
                 type: string
               timeout:
@@ -376,6 +381,7 @@ spec:
                 - Terminating
                 - Terminated
                 - Failed
+                - null
                 nullable: true
                 type: string
               readyAt:
@@ -396,6 +402,7 @@ spec:
                       type: string
                     port:
                       format: uint16
+                      maximum: 65535.0
                       minimum: 0.0
                       type: integer
                     protocol:
@@ -459,7 +466,9 @@ spec:
         description: Auto-generated derived type for ChallengeInstanceClassSpec via `CustomResource`
         properties:
           spec:
-            description: ChallengeInstanceClass defines configuration for ChallengeInstances Similar to StorageClass in Kubernetes, this allows different "tiers" of instances
+            description: |-
+              ChallengeInstanceClass defines configuration for ChallengeInstances
+              Similar to StorageClass in Kubernetes, this allows different "tiers" of instances
             properties:
               default:
                 default: false
@@ -503,6 +512,7 @@ spec:
                     default: 80
                     description: HTTP port exposed by the Gateway
                     format: uint16
+                    maximum: 65535.0
                     minimum: 0.0
                     type: integer
                   name:
@@ -518,6 +528,7 @@ spec:
                     default: 443
                     description: TLS port exposed by the Gateway
                     format: uint16
+                    maximum: 65535.0
                     minimum: 0.0
                     type: integer
                 required:

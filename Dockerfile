@@ -1,26 +1,20 @@
-# Build stage
-FROM rust:1.91-bookworm as builder
+FROM lukemathwalker/cargo-chef:latest-rust-1 AS chef
+WORKDIR /app
 
-WORKDIR /build
+FROM chef AS planner
+COPY Cargo.toml Cargo.lock .
+RUN cargo chef prepare --recipe-path recipe.json
 
-# Copy manifests
-COPY Cargo.toml Cargo.lock ./
+FROM chef AS builder 
+COPY --from=planner /app/recipe.json recipe.json
+# Build dependencies - this is the caching Docker layer!
+RUN cargo chef cook --release --recipe-path recipe.json
+# Build application
+COPY . .
+RUN cargo build --release --bin berg-controller
 
-# Copy source code
-COPY src ./src
-
-# Build release binary
-RUN cargo build --release --bin berg-operator
-
-# Runtime stage
-FROM gcr.io/distroless/cc-debian12
-
-WORKDIR /
-
-# Copy the binary from builder
-COPY --from=builder /build/target/release/berg-operator /usr/local/bin/berg-operator
-
-# Use non-root user
-USER nonroot:nonroot
-
-ENTRYPOINT ["/usr/local/bin/berg-operator"]
+# We do not need the Rust toolchain to run the binary!
+FROM gcr.io/distroless/cc-debian12 AS runtime
+WORKDIR /app
+COPY --from=builder /app/target/release/berg-controller /usr/local/bin
+ENTRYPOINT ["/usr/local/bin/berg-controller"]

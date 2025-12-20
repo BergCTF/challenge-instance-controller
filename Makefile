@@ -24,8 +24,8 @@ test:
 # Generate CRD YAML files
 crdgen:
 	@echo "Generating CRDs..."
-	cargo run --bin crdgen 2>/dev/null > charts/berg-operator/templates/crd.yaml
-	@echo "CRDs generated to charts/berg-operator/templates/crd.yaml"
+	cargo run --bin crdgen 2>/dev/null > crds/crd.yaml
+	@echo "CRDs generated to crds/crd.yaml"
 
 # Build Docker image
 docker-build:

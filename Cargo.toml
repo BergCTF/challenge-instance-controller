@@ -1,11 +1,11 @@
 [package]
-name = "berg-operator"
+name = "berg-controller"
 version = "0.1.0"
 edition = "2021"
-default-run = "berg-operator"
+default-run = "berg-controller"
 
 [[bin]]
-name = "berg-operator"
+name = "berg-controller"
 path = "src/main.rs"
 
 [[bin]]

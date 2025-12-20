@@ -93,6 +93,7 @@ pub async fn reconcile_creating(
     // 4. For each container, create resources
     for container in &challenge.spec.containers {
         // Services
+        // TODO: headless service parity
         resources::service::create(&instance, &challenge, container, &namespace_name, &ctx).await?;
 
         // Gateway API routes

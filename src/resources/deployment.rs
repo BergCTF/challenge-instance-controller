@@ -9,14 +9,11 @@ use k8s_openapi::{
     api::{
         apps::v1::{Deployment, DeploymentSpec},
         core::v1::{
-            Capabilities, Container, EnvVar, Pod, PodSpec, PodTemplateSpec,
-            ResourceRequirements, SecurityContext,
+            Capabilities, Container, EnvVar, Pod, PodSpec, PodTemplateSpec, ResourceRequirements,
+            SecurityContext,
         },
     },
-    apimachinery::pkg::{
-        api::resource::Quantity,
-        apis::meta::v1::LabelSelector,
-    },
+    apimachinery::pkg::{api::resource::Quantity, apis::meta::v1::LabelSelector},
 };
 use kube::{
     api::{Api, ListParams, PostParams},
@@ -82,6 +79,8 @@ fn build_deployment(
         ..Default::default()
     });
 
+    // TODO: verify we push service endpoints here
+
     // Add flag if env mode
     if let Some(ref dynamic_flag) = container_spec.dynamic_flag {
         if let Some(ref env_flag) = dynamic_flag.env {
@@ -128,6 +127,7 @@ fn build_deployment(
         } else {
             Some(env_vars)
         },
+        // TODO: where are my ports
         volume_mounts: if volume_mounts.is_empty() {
             None
         } else {
@@ -152,7 +152,10 @@ fn build_deployment(
         pod_annotations.insert("kubernetes.io/egress-bandwidth".to_string(), egress.clone());
     }
     if let Some(ref ingress) = container_spec.ingress_bandwidth {
-        pod_annotations.insert("kubernetes.io/ingress-bandwidth".to_string(), ingress.clone());
+        pod_annotations.insert(
+            "kubernetes.io/ingress-bandwidth".to_string(),
+            ingress.clone(),
+        );
     }
     pod_annotations.insert(
         "cluster-autoscaler.kubernetes.io/safe-to-evict".to_string(),
@@ -178,10 +181,14 @@ fn build_deployment(
             } else {
                 Some(volumes)
             },
-            runtime_class_name: container_spec
-                .runtime_class_name
-                .clone()
-                .or_else(|| class.spec.security.as_ref().and_then(|s| s.runtime_class_name.clone())),
+            // TODO: verify image pull secrets
+            runtime_class_name: container_spec.runtime_class_name.clone().or_else(|| {
+                class
+                    .spec
+                    .security
+                    .as_ref()
+                    .and_then(|s| s.runtime_class_name.clone())
+            }),
             enable_service_links: Some(false),
             automount_service_account_token: Some(false),
             termination_grace_period_seconds: Some(0),
@@ -209,21 +216,36 @@ fn build_deployment(
     })
 }
 
-fn build_resources(container_spec: &ContainerSpec, class: &ChallengeInstanceClass) -> ResourceRequirements {
+fn build_resources(
+    container_spec: &ContainerSpec,
+    class: &ChallengeInstanceClass,
+) -> ResourceRequirements {
     let mut limits = BTreeMap::new();
     let mut requests = BTreeMap::new();
 
     // Get defaults from class
-    let default_cpu_limit = class.spec.default_resources.as_ref()
+    let default_cpu_limit = class
+        .spec
+        .default_resources
+        .as_ref()
         .and_then(|r| r.cpu_limit.clone())
         .unwrap_or_else(|| "1000m".to_string());
-    let default_cpu_request = class.spec.default_resources.as_ref()
+    let default_cpu_request = class
+        .spec
+        .default_resources
+        .as_ref()
         .and_then(|r| r.cpu_request.clone())
         .unwrap_or_else(|| "100m".to_string());
-    let default_memory_limit = class.spec.default_resources.as_ref()
+    let default_memory_limit = class
+        .spec
+        .default_resources
+        .as_ref()
         .and_then(|r| r.memory_limit.clone())
         .unwrap_or_else(|| "512Mi".to_string());
-    let default_memory_request = class.spec.default_resources.as_ref()
+    let default_memory_request = class
+        .spec
+        .default_resources
+        .as_ref()
         .and_then(|r| r.memory_request.clone())
         .unwrap_or_else(|| "128Mi".to_string());
 

@@ -1,5 +1,8 @@
 use crate::{
-    crds::{Challenge, ChallengeInstance, ChallengeInstanceClass, ContainerSpec, PortType, ServiceEndpoint},
+    crds::{
+        Challenge, ChallengeInstance, ChallengeInstanceClass, ContainerSpec, PortType,
+        ServiceEndpoint,
+    },
     error::Result,
     reconciler::Context,
 };
@@ -32,7 +35,10 @@ pub async fn create(
                 namespace: Some(namespace.to_string()),
                 labels: Some({
                     let mut labels = BTreeMap::new();
-                    labels.insert("app.kubernetes.io/managed-by".to_string(), "berg".to_string());
+                    labels.insert(
+                        "app.kubernetes.io/managed-by".to_string(),
+                        "berg".to_string(),
+                    );
                     labels
                 }),
                 ..Default::default()
@@ -41,7 +47,10 @@ pub async fn create(
                 type_: Some(service_type.to_string()),
                 selector: Some({
                     let mut selector = BTreeMap::new();
-                    selector.insert("berg.norelect.ch/container".to_string(), container.hostname.clone());
+                    selector.insert(
+                        "berg.norelect.ch/container".to_string(),
+                        container.hostname.clone(),
+                    );
                     selector
                 }),
                 ports: Some(vec![ServicePort {
@@ -83,6 +92,7 @@ pub async fn discover_endpoints(
                 PortType::PublicPort => {
                     // For NodePort, return the domain with the node port
                     // In a real implementation, we'd query the service to get the actual NodePort
+                    // TODO: get actual port
                     endpoints.push(ServiceEndpoint {
                         name: port.name.clone(),
                         hostname: class.spec.gateway.domain.clone(),
@@ -96,11 +106,7 @@ pub async fn discover_endpoints(
                     // For HTTP/TLS routes, construct hostname from instance ID
                     let hostname = if let Some(ref status) = instance.status {
                         if let Some(ref instance_id) = status.instance_id {
-                            format!(
-                                "{}.{}",
-                                instance_id,
-                                class.spec.gateway.domain
-                            )
+                            format!("{}.{}", instance_id, class.spec.gateway.domain)
                         } else {
                             class.spec.gateway.domain.clone()
                         }
@@ -119,7 +125,11 @@ pub async fn discover_endpoints(
                             class.spec.gateway.http_port
                         },
                         protocol: "TCP".to_string(),
-                        app_protocol: Some(if is_tls { "HTTPS".to_string() } else { "HTTP".to_string() }),
+                        app_protocol: Some(if is_tls {
+                            "HTTPS".to_string()
+                        } else {
+                            "HTTP".to_string()
+                        }),
                         tls: Some(is_tls),
                     });
                 }

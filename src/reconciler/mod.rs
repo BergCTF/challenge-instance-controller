@@ -97,7 +97,8 @@ async fn fetch_challenge(instance: &ChallengeInstance, ctx: &Context) -> Result<
     let challenge_ns = instance
         .spec
         .challenge_ref
-        .namespace.as_deref()
+        .namespace
+        .as_deref()
         .unwrap_or(&ctx.config.challenge_namespace);
 
     let challenges: Api<Challenge> = Api::namespaced(ctx.client.clone(), challenge_ns);
@@ -123,7 +124,8 @@ async fn fetch_instance_class(
     // Use specified class or default
     let class_name = instance
         .spec
-        .instance_class.as_deref()
+        .instance_class
+        .as_deref()
         .unwrap_or(&ctx.config.default_instance_class);
 
     classes.get(class_name).await.map_err(|e| match e {

@@ -27,6 +27,15 @@ rules:
     resources: ["challengeinstanceclasses"]
     verbs: ["get", "list", "watch"]
 
+  # if running hardened
+  # we only want to create or delete namespaces, never update
+  # this should be used in combination with kyverno rules
+  # and the namespace scoped role
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+
+  # if running unhardened
   # Namespace management
   - apiGroups: [""]
     resources: ["namespaces"]

@@ -30,6 +30,7 @@ impl Metrics {
     }
 }
 
+#[cfg(not(debug_assertions))]
 pub fn init() {
     tracing_subscriber::fmt()
         .with_env_filter(
@@ -38,5 +39,16 @@ pub fn init() {
                 .add_directive("kube=info".parse().unwrap()),
         )
         .json()
+        .init();
+}
+
+#[cfg(debug_assertions)]
+pub fn init() {
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::from_default_env()
+                .add_directive("berg_operator=info".parse().unwrap())
+                .add_directive("kube=info".parse().unwrap()),
+        )
         .init();
 }

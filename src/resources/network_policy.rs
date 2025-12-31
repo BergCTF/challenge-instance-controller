@@ -11,13 +11,16 @@ use crate::{
     reconciler::Context,
 };
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::LabelSelector;
-use kube::api::{Api, PostParams};
+use kube::{
+    api::{Api, PostParams},
+    Resource,
+};
 use std::collections::BTreeMap;
 use tracing::info;
 
 /// Create CiliumNetworkPolicy for challenge instance
 pub async fn create(
-    _instance: &ChallengeInstance,
+    instance: &ChallengeInstance,
     challenge: &Challenge,
     namespace: &str,
     class: &ChallengeInstanceClass,
@@ -102,6 +105,7 @@ pub async fn create(
         metadata: kube::api::ObjectMeta {
             name: Some("challenge-network-policy".to_string()),
             namespace: Some(namespace.to_string()),
+            owner_references: Some(vec![instance.controller_owner_ref(&()).unwrap()]),
             labels: Some({
                 let mut labels = BTreeMap::new();
                 labels.insert(

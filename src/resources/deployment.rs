@@ -17,7 +17,7 @@ use k8s_openapi::{
 };
 use kube::{
     api::{Api, ListParams, PostParams},
-    Client,
+    Client, Resource,
 };
 use std::collections::BTreeMap;
 use tracing::info;
@@ -269,6 +269,7 @@ fn build_deployment(
         metadata: kube::api::ObjectMeta {
             name: Some(container_name.clone()),
             namespace: Some(namespace.to_string()),
+            owner_references: Some(vec![instance.controller_owner_ref(&()).unwrap()]),
             labels: Some(labels::resource_labels(instance, challenge)),
             ..Default::default()
         },

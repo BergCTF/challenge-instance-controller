@@ -7,12 +7,15 @@ use k8s_openapi::{
     api::policy::v1::{PodDisruptionBudget, PodDisruptionBudgetSpec},
     apimachinery::pkg::{apis::meta::v1::LabelSelector, util::intstr::IntOrString},
 };
-use kube::api::{Api, PostParams};
+use kube::{
+    api::{Api, PostParams},
+    Resource,
+};
 use std::collections::BTreeMap;
 use tracing::info;
 
 pub async fn create(
-    _instance: &ChallengeInstance,
+    instance: &ChallengeInstance,
     container: &ContainerSpec,
     namespace: &str,
     ctx: &Context,
@@ -24,6 +27,7 @@ pub async fn create(
     let pdb = PodDisruptionBudget {
         metadata: kube::api::ObjectMeta {
             name: Some(pdb_name.clone()),
+            owner_references: Some(vec![instance.controller_owner_ref(&()).unwrap()]),
             namespace: Some(namespace.to_string()),
             ..Default::default()
         },

@@ -7,7 +7,7 @@ use crate::{
 use k8s_openapi::api::core::v1::{Namespace, Secret};
 use kube::{
     api::{Api, PostParams},
-    Client,
+    Client, Resource,
 };
 use tracing::info;
 
@@ -22,6 +22,7 @@ pub async fn create(
         metadata: kube::api::ObjectMeta {
             name: Some(namespace_name.to_string()),
             labels: Some(labels::namespace_labels(instance, ctx)),
+            owner_references: Some(vec![instance.controller_owner_ref(&()).unwrap()]),
             ..Default::default()
         },
         ..Default::default()

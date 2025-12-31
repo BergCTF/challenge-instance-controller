@@ -7,7 +7,10 @@ use crate::{
     error::{Error, Result},
     reconciler::Context,
 };
-use kube::api::{Api, PostParams};
+use kube::{
+    api::{Api, PostParams},
+    Resource,
+};
 use std::collections::BTreeMap;
 use tracing::info;
 use uuid::Uuid;
@@ -34,6 +37,7 @@ pub async fn create_http_routes(
                 metadata: kube::api::ObjectMeta {
                     name: Some(route_name.clone()),
                     namespace: Some(namespace.to_string()),
+                    owner_references: Some(vec![instance.controller_owner_ref(&()).unwrap()]),
                     labels: Some({
                         let mut labels = BTreeMap::new();
                         labels.insert(
@@ -124,6 +128,7 @@ pub async fn create_tls_routes(
                 metadata: kube::api::ObjectMeta {
                     name: Some(route_name.clone()),
                     namespace: Some(namespace.to_string()),
+                    owner_references: Some(vec![instance.controller_owner_ref(&()).unwrap()]),
                     labels: Some({
                         let mut labels = BTreeMap::new();
                         labels.insert(

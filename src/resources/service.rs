@@ -1,18 +1,24 @@
 use crate::{
     crds::{
-        Challenge, ChallengeInstance, ChallengeInstanceClass, ContainerSpec, PortType,
+        Challenge, ChallengeInstance, ChallengeInstanceClass, ContainerSpec, PortSpec, PortType,
         ServiceEndpoint,
     },
     error::Result,
     reconciler::Context,
 };
-use k8s_openapi::api::core::v1::{Service, ServicePort, ServiceSpec};
-use kube::api::{Api, PostParams};
+use k8s_openapi::{
+    api::core::v1::{Service, ServicePort, ServiceSpec},
+    apimachinery::pkg::apis::meta::v1::OwnerReference,
+};
+use kube::{
+    api::{Api, PostParams},
+    Resource,
+};
 use std::collections::BTreeMap;
 use tracing::info;
 
 pub async fn create(
-    _instance: &ChallengeInstance,
+    instance: &ChallengeInstance,
     _challenge: &Challenge,
     container: &ContainerSpec,
     namespace: &str,
@@ -20,48 +26,17 @@ pub async fn create(
 ) -> Result<()> {
     let api: Api<Service> = Api::namespaced(ctx.client.clone(), namespace);
 
-    for port in &container.ports {
-        let service_name = format!("{}-{}", container.hostname, port.name);
-
-        let service_type = match port.r#type {
-            PortType::PublicPort => "NodePort",
-            _ => "ClusterIP",
-        };
-
-        let svc = Service {
-            metadata: kube::api::ObjectMeta {
-                name: Some(service_name.clone()),
-                namespace: Some(namespace.to_string()),
-                labels: Some({
-                    let mut labels = BTreeMap::new();
-                    labels.insert(
-                        "app.kubernetes.io/managed-by".to_string(),
-                        "berg".to_string(),
-                    );
-                    labels
-                }),
-                ..Default::default()
-            },
-            spec: Some(ServiceSpec {
-                type_: Some(service_type.to_string()),
-                selector: Some({
-                    let mut selector = BTreeMap::new();
-                    selector.insert(
-                        "berg.norelect.ch/container".to_string(),
-                        container.hostname.clone(),
-                    );
-                    selector
-                }),
-                ports: Some(vec![ServicePort {
-                    name: Some(port.name.clone()),
-                    port: port.port as i32,
-                    protocol: Some(port.protocol.to_uppercase()),
-                    ..Default::default()
-                }]),
-                ..Default::default()
-            }),
-            ..Default::default()
-        };
+    // create ClusterIP service
+    if container.ports.is_empty() {
+        let service_name = container.hostname.to_string();
+        let svc = make_svc(
+            &service_name,
+            "ClusterIP",
+            namespace,
+            &container.hostname,
+            &container.ports,
+            instance.controller_owner_ref(&()).unwrap(),
+        );
 
         match api.create(&PostParams::default(), &svc).await {
             Ok(_) => info!("Created service {} in {}", service_name, namespace),
@@ -69,10 +44,86 @@ pub async fn create(
                 info!("Service {} already exists", service_name)
             }
             Err(e) => return Err(e.into()),
-        }
+        };
+    }
+
+    // if any nodeport ports exist, create a node port service
+    let node_ports = container
+        .ports
+        .iter()
+        .filter(|p| p.r#type == PortType::PublicPort)
+        .cloned()
+        .collect::<Vec<_>>();
+    if node_ports.is_empty() {
+        let service_name = format!("{}-node-port", container.hostname);
+        let svc = make_svc(
+            &service_name,
+            "NodePort",
+            namespace,
+            &container.hostname,
+            &node_ports,
+            instance.controller_owner_ref(&()).unwrap(),
+        );
+        match api.create(&PostParams::default(), &svc).await {
+            Ok(_) => info!("Created service {} in {}", service_name, namespace),
+            Err(kube::Error::Api(ae)) if ae.code == 409 => {
+                info!("Service {} already exists", service_name)
+            }
+            Err(e) => return Err(e.into()),
+        };
     }
 
     Ok(())
+}
+
+fn make_svc(
+    name: &str,
+    service_type: &str,
+    namespace: &str,
+    hostname: &str,
+    ports: &[PortSpec],
+    oref: OwnerReference,
+) -> Service {
+    Service {
+        metadata: kube::api::ObjectMeta {
+            name: Some(name.to_owned()),
+            namespace: Some(namespace.to_string()),
+            owner_references: Some(vec![oref]),
+            labels: Some({
+                let mut labels = BTreeMap::new();
+                labels.insert(
+                    "app.kubernetes.io/managed-by".to_string(),
+                    "berg".to_string(),
+                );
+                labels
+            }),
+            ..Default::default()
+        },
+        spec: Some(ServiceSpec {
+            type_: Some(service_type.to_string()),
+            selector: Some({
+                let mut selector = BTreeMap::new();
+                selector.insert(
+                    "berg.norelect.ch/container".to_string(),
+                    hostname.to_owned(),
+                );
+                selector
+            }),
+            ports: Some(
+                ports
+                    .iter()
+                    .map(|p| ServicePort {
+                        name: Some(p.name.to_owned()),
+                        port: p.port as i32,
+                        protocol: Some(p.protocol.to_uppercase()),
+                        ..Default::default()
+                    })
+                    .collect(),
+            ),
+            ..Default::default()
+        }),
+        ..Default::default()
+    }
 }
 
 pub async fn discover_endpoints(
@@ -91,7 +142,7 @@ pub async fn discover_endpoints(
                 PortType::InternalPort => continue,
                 PortType::PublicPort => {
                     // Query the service to get the actual NodePort assigned by Kubernetes
-                    let service_name = format!("{}-{}", container.hostname, port.name);
+                    let service_name = format!("{}-node-port", container.hostname);
                     let actual_port = match api.get(&service_name).await {
                         Ok(svc) => {
                             // Extract the NodePort from the service

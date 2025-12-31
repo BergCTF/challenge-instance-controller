@@ -64,7 +64,8 @@ pub fn generate_elf_executable(flag: &str) -> Result<Vec<u8>> {
 
     // Calculate offsets
     let code_addr = BASE_ADDR + CODE_OFFSET;
-    let data_offset = CODE_OFFSET + 40; // Code is about 40 bytes
+    let code_len = 45;
+    let data_offset = CODE_OFFSET + code_len;
     let data_addr = BASE_ADDR + data_offset;
 
     let mut elf = Vec::new();
@@ -120,6 +121,8 @@ pub fn generate_elf_executable(flag: &str) -> Result<Vec<u8>> {
     //   xor rdi, rdi        ; status: 0
     //   syscall
 
+    let header_len = elf.len();
+
     elf.extend_from_slice(&[
         0x48, 0xc7, 0xc0, 0x01, 0x00, 0x00, 0x00, // mov rax, 1
         0x48, 0xc7, 0xc7, 0x01, 0x00, 0x00, 0x00, // mov rdi, 1
@@ -140,6 +143,8 @@ pub fn generate_elf_executable(flag: &str) -> Result<Vec<u8>> {
         0x0f, 0x05, // syscall
     ]);
 
+    assert_eq!(header_len + code_len as usize, elf.len());
+
     // Data section - the flag string
     elf.extend_from_slice(flag_bytes);
 
@@ -148,6 +153,14 @@ pub fn generate_elf_executable(flag: &str) -> Result<Vec<u8>> {
 
 #[cfg(test)]
 mod tests {
+    use std::{
+        fs::{File, Permissions},
+        io::Write,
+        os::{self, unix::fs::PermissionsExt},
+        path::Path,
+        process::Command,
+    };
+
     use super::*;
 
     #[test]
@@ -186,5 +199,23 @@ mod tests {
             assert!(elf.len() > 120); // Should have at least header + program header + code
             assert!(elf.len() >= 120 + flag.len()); // Should contain the flag
         }
+    }
+
+    #[test]
+    fn test_run_elf_executable() {
+        let flag = "flag{uwu_awa_owo}";
+        let elf = generate_elf_executable(flag).unwrap();
+
+        let path = Path::new("/dev/shm/elf");
+        {
+            let mut file = File::create(&path).unwrap();
+            file.set_permissions(Permissions::from_mode(0o777)).unwrap();
+            file.write_all(&elf).unwrap();
+            file.flush().unwrap();
+        }
+
+        let result = Command::new(&path).output().unwrap();
+        // std::fs::remove_file(&path).unwrap();
+        assert!(flag == String::from_utf8(result.stdout).unwrap());
     }
 }

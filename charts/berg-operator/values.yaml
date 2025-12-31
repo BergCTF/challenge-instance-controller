@@ -34,7 +34,7 @@ gateway:
 
 # ChallengeInstanceClass configuration
 instanceClass:
-  name: standard
+  name: default
   default: true
   defaultTimeout: "2h"
 

@@ -221,26 +221,38 @@ pub async fn reconcile_starting(
         );
 
         let now = chrono::Utc::now().to_rfc3339();
-        update_status(&instance, &ctx, |status| {
-            // Update or add PodsReady condition as Unknown
-            if let Some(cond) = status
-                .conditions
-                .iter_mut()
-                .find(|c| c.r#type == "PodsReady")
-            {
-                cond.status = ConditionStatus::Unknown;
-                cond.last_transition_time = Some(DateTime(now.clone()));
-            } else {
-                status.conditions.push(Condition {
-                    r#type: "PodsReady".to_string(),
-                    status: ConditionStatus::Unknown,
-                    last_transition_time: Some(DateTime(now)),
-                    reason: Some("WaitingForPods".to_string()),
-                    message: Some("Waiting for pods to be ready".to_string()),
-                });
-            }
-        })
-        .await?;
+        if !instance
+            .status
+            .as_ref()
+            .map(|status| {
+                status
+                    .conditions
+                    .iter()
+                    .any(|c| c.r#type == "PodsReady" && c.status == ConditionStatus::Unknown)
+            })
+            .is_some_and(|f| f)
+        {
+            update_status(&instance, &ctx, |status| {
+                // Update or add PodsReady condition as Unknown
+                if let Some(cond) = status
+                    .conditions
+                    .iter_mut()
+                    .find(|c| c.r#type == "PodsReady")
+                {
+                    cond.status = ConditionStatus::Unknown;
+                    cond.last_transition_time = Some(DateTime(now.clone()));
+                } else {
+                    status.conditions.push(Condition {
+                        r#type: "PodsReady".to_string(),
+                        status: ConditionStatus::Unknown,
+                        last_transition_time: Some(DateTime(now)),
+                        reason: Some("WaitingForPods".to_string()),
+                        message: Some("Waiting for pods to be ready".to_string()),
+                    });
+                }
+            })
+            .await?;
+        }
 
         Ok(Action::requeue(Duration::from_secs(5)))
     }

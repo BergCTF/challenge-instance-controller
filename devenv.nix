@@ -6,8 +6,16 @@
   ...
 }:
 {
+  imports = [
+    inputs.kind-service.devenvModules.default
+  ];
+
   # https://devenv.sh/basics/
   env.GREET = "devenv";
+
+  services.kind = {
+    enable = true;
+  };
 
   # https://devenv.sh/packages/
   packages = [
@@ -15,6 +23,7 @@
     pkgs.kubernetes-helm
     pkgs.kubectl
     pkgs.kind
+    pkgs.kyverno-chainsaw
 
     pkgs.cargo-outdated
     pkgs.cargo-machete
@@ -71,6 +80,17 @@
     exec = ''
       docker build -t berg-controller:test -f Dockerfile .
     '';
+  };
+
+  outputs = {
+    berg-controller = config.languages.rust.import ./. { };
+  };
+
+  containers = {
+    "controller" = {
+      copyToRoot = [ ];
+      entrypoint = [ "${config.outputs.berg-controller}/bin/berg-controller" ];
+    };
   };
 
   # https://devenv.sh/tests/

@@ -32,10 +32,9 @@ pub struct Context {
 
 #[instrument(skip(ctx, instance), fields(instance_name = %instance.name_any()))]
 pub async fn reconcile(instance: Arc<ChallengeInstance>, ctx: Arc<Context>) -> Result<Action> {
-    let ns = instance.namespace().unwrap();
     let name = instance.name_any();
 
-    info!("Reconciling ChallengeInstance {}/{}", ns, name);
+    info!("Reconciling ChallengeInstance {}", name);
     ctx.metrics.record_reconcile();
 
     // Handle deletion
@@ -137,8 +136,7 @@ async fn fetch_instance_class(
 }
 
 async fn add_finalizer(instance: Arc<ChallengeInstance>, ctx: Arc<Context>) -> Result<Action> {
-    let ns = instance.namespace().unwrap();
-    let api: Api<ChallengeInstance> = Api::namespaced(ctx.client.clone(), &ns);
+    let api: Api<ChallengeInstance> = Api::all(ctx.client.clone());
 
     let mut finalizers = instance.meta().finalizers.clone().unwrap_or_default();
     finalizers.push(FINALIZER.to_string());
@@ -190,8 +188,7 @@ pub async fn update_status<F>(instance: &ChallengeInstance, ctx: &Context, mutat
 where
     F: FnOnce(&mut ChallengeInstanceStatus),
 {
-    let ns = instance.namespace().unwrap();
-    let api: Api<ChallengeInstance> = Api::namespaced(ctx.client.clone(), &ns);
+    let api: Api<ChallengeInstance> = Api::all(ctx.client.clone());
 
     let mut status = instance.status.clone().unwrap_or_default();
     mutate(&mut status);

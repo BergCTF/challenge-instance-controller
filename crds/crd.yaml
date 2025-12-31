@@ -249,7 +249,7 @@ spec:
     - ci
     - instance
     singular: challengeinstance
-  scope: Namespaced
+  scope: Cluster
   versions:
   - additionalPrinterColumns:
     - jsonPath: .spec.challengeRef.name

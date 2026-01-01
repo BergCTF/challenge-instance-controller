@@ -659,10 +659,10 @@
         "nixpkgs": "nixpkgs_6"
       },
       "locked": {
-        "lastModified": 1766383184,
+        "lastModified": 1767271689,
         "owner": "cfi2017",
         "repo": "devenv-kind-service-overlay",
-        "rev": "134729e79bbc5440af322fb837e74ae21d3ec37b",
+        "rev": "7de49acbd5e306d0b320d1a01a8b0075b6acf2ff",
         "type": "github"
       },
       "original": {

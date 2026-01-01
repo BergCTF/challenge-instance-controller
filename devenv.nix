@@ -14,7 +14,7 @@
   env.GREET = "devenv";
 
   services.kind = {
-    enable = true;
+    enable = false;
   };
 
   # https://devenv.sh/packages/

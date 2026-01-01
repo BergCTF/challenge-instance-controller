@@ -81,8 +81,18 @@ fn build_deployment(
 
     for container in &challenge.spec.containers {
         for port in &container.ports {
-            let env_name = format!("{}_ENDPOINT", port.name.to_uppercase());
-            let service_name = format!("{}-{}", container.hostname, port.name);
+            let env_name = format!(
+                "{}_ENDPOINT",
+                port.name
+                    .to_owned()
+                    .unwrap_or(port.port.to_string())
+                    .to_uppercase()
+            );
+            let service_name = format!(
+                "{}-{}",
+                container.hostname,
+                port.name.to_owned().unwrap_or(port.port.to_string())
+            );
 
             let endpoint_value = match port.r#type {
                 crate::crds::PortType::InternalPort => {
@@ -166,7 +176,7 @@ fn build_deployment(
         .ports
         .iter()
         .map(|p| k8s_openapi::api::core::v1::ContainerPort {
-            name: Some(p.name.clone()),
+            name: p.name.clone(),
             container_port: p.port as i32,
             protocol: Some(p.protocol.to_uppercase()),
             ..Default::default()

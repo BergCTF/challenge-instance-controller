@@ -1,9 +1,9 @@
 use super::{update_status, Context};
 use crate::{
     crds::{
-        Challenge, ChallengeInstance, ChallengeInstanceClass, Condition, ConditionStatus, DateTime,
-        Phase,
+        Challenge, ChallengeInstance, ChallengeInstanceClass, Condition, ConditionStatus, Phase,
     },
+    date_time::DateTime,
     error::Result,
     resources, utils,
 };
@@ -34,7 +34,7 @@ pub async fn reconcile_pending(
             status.conditions.push(Condition {
                 r#type: "FlagValidation".to_string(),
                 status: ConditionStatus::False,
-                last_transition_time: Some(DateTime(chrono::Utc::now().to_rfc3339())),
+                last_transition_time: Some(DateTime::now()),
                 reason: Some("FlagMissing".to_string()),
                 message: Some("Flag required but not provided".to_string()),
             });
@@ -50,7 +50,7 @@ pub async fn reconcile_pending(
         status.conditions.push(Condition {
             r#type: "FlagValidation".to_string(),
             status: ConditionStatus::True,
-            last_transition_time: Some(DateTime(chrono::Utc::now().to_rfc3339())),
+            last_transition_time: Some(DateTime::now()),
             reason: Some("FlagValid".to_string()),
             message: Some("Flag validation passed".to_string()),
         });
@@ -130,7 +130,7 @@ pub async fn reconcile_creating(
     }
 
     // Update status
-    let now = chrono::Utc::now().to_rfc3339();
+    let now = chrono::Utc::now();
     update_status(&instance, &ctx, |status| {
         status.namespace = Some(namespace_name.clone());
         status.phase = Some(Phase::Starting);
@@ -138,14 +138,14 @@ pub async fn reconcile_creating(
             Condition {
                 r#type: "NamespaceCreated".to_string(),
                 status: ConditionStatus::True,
-                last_transition_time: Some(DateTime(now.clone())),
+                last_transition_time: Some(DateTime::from(now)),
                 reason: Some("Created".to_string()),
                 message: Some(format!("Namespace {} created", namespace_name)),
             },
             Condition {
                 r#type: "ResourcesCreated".to_string(),
                 status: ConditionStatus::True,
-                last_transition_time: Some(DateTime(now)),
+                last_transition_time: Some(DateTime::from(now)),
                 reason: Some("Created".to_string()),
                 message: Some("All resources created".to_string()),
             },
@@ -183,10 +183,10 @@ pub async fn reconcile_starting(
             resources::service::discover_endpoints(&instance, &challenge, namespace, &class, &ctx)
                 .await?;
 
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = chrono::Utc::now();
         update_status(&instance, &ctx, |status| {
             status.phase = Some(Phase::Running);
-            status.ready_at = Some(DateTime(now.clone()));
+            status.ready_at = Some(DateTime(now));
             status.services = endpoints;
             status.conditions.push(Condition {
                 r#type: "PodsReady".to_string(),
@@ -204,14 +204,9 @@ pub async fn reconcile_starting(
             .as_ref()
             .and_then(|s| s.expires_at.as_ref())
             .expect("expiresAt should be set");
-        let duration =
-            if let Ok(expires_at) = chrono::DateTime::parse_from_rfc3339(&expires_at_dt.0) {
-                (expires_at.with_timezone(&chrono::Utc) - chrono::Utc::now())
-                    .to_std()
-                    .unwrap_or(Duration::from_secs(3600))
-            } else {
-                Duration::from_secs(3600)
-            };
+        let duration = (expires_at_dt.0 - chrono::Utc::now())
+            .to_std()
+            .unwrap_or(Duration::from_secs(3600));
 
         Ok(Action::requeue(duration))
     } else {
@@ -220,7 +215,7 @@ pub async fn reconcile_starting(
             instance.name_any()
         );
 
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = chrono::Utc::now();
         if !instance
             .status
             .as_ref()
@@ -240,7 +235,7 @@ pub async fn reconcile_starting(
                     .find(|c| c.r#type == "PodsReady")
                 {
                     cond.status = ConditionStatus::Unknown;
-                    cond.last_transition_time = Some(DateTime(now.clone()));
+                    cond.last_transition_time = Some(DateTime(now));
                 } else {
                     status.conditions.push(Condition {
                         r#type: "PodsReady".to_string(),
@@ -276,13 +271,9 @@ pub async fn reconcile_running(
         .as_ref()
         .and_then(|s| s.expires_at.as_ref())
         .expect("expiresAt should be set");
-    let duration = if let Ok(expires_at) = chrono::DateTime::parse_from_rfc3339(&expires_at_dt.0) {
-        (expires_at.with_timezone(&chrono::Utc) - chrono::Utc::now())
-            .to_std()
-            .unwrap_or(Duration::from_secs(60))
-    } else {
-        Duration::from_secs(60)
-    };
+    let duration = (expires_at_dt.0 - chrono::Utc::now())
+        .to_std()
+        .unwrap_or(Duration::from_secs(3600));
 
     Ok(Action::requeue(duration))
 }

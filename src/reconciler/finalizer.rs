@@ -1,6 +1,7 @@
 use super::{update_status, Context, FINALIZER};
 use crate::{
-    crds::{ChallengeInstance, Condition, ConditionStatus, DateTime, Phase},
+    crds::{ChallengeInstance, Condition, ConditionStatus, Phase},
+    date_time::DateTime,
     error::Result,
     utils,
 };
@@ -51,14 +52,14 @@ pub async fn cleanup(instance: Arc<ChallengeInstance>, ctx: Arc<Context>) -> Res
     }
 
     // Update status to Terminated
-    let now = chrono::Utc::now().to_rfc3339();
+    let now = DateTime::now();
     update_status(&instance, &ctx, |status| {
         status.phase = Some(Phase::Terminated);
-        status.terminated_at = Some(DateTime(now.clone()));
+        status.terminated_at = Some(now.clone());
         status.conditions.push(Condition {
             r#type: "NamespaceDeleted".to_string(),
             status: ConditionStatus::True,
-            last_transition_time: Some(DateTime(now)),
+            last_transition_time: Some(now),
             reason: Some("Deleted".to_string()),
             message: Some("Namespace deleted".to_string()),
         });

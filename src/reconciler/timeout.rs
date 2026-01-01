@@ -2,7 +2,7 @@ use crate::{
     crds::{ChallengeInstance, TerminationReason},
     error::{Error, Result},
 };
-use chrono::{DateTime, Duration, Utc};
+use chrono::{Duration, Utc};
 use kube::{
     api::{Api, DeleteParams},
     runtime::controller::Action,
@@ -17,19 +17,17 @@ use super::Context;
 pub fn is_expired(instance: &ChallengeInstance) -> bool {
     if let Some(status) = &instance.status {
         if let Some(ref expires_at_dt) = status.expires_at {
-            if let Ok(expires_at) = DateTime::parse_from_rfc3339(&expires_at_dt.0) {
-                return Utc::now() > expires_at.with_timezone(&Utc);
-            }
+            return Utc::now() > expires_at_dt.0;
         }
     }
     false
 }
 
 /// Calculate expiry time from a timeout string like "2h", "30m", "1h30m"
-pub fn calculate_expiry(timeout_str: &str) -> Result<String> {
+pub fn calculate_expiry(timeout_str: &str) -> Result<chrono::DateTime<Utc>> {
     let duration = parse_timeout(timeout_str)?;
     let expiry = Utc::now() + duration;
-    Ok(expiry.to_rfc3339())
+    Ok(expiry)
 }
 
 /// Parse a timeout string into a Duration

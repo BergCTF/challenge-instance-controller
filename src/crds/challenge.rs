@@ -49,9 +49,12 @@ pub struct ChallengeSpec {
     #[serde(default)]
     pub tags: Vec<String>,
     pub event: Option<String>,
+    #[serde(default)]
     pub allow_outbound_traffic: bool,
+    #[serde(default)]
     pub containers: Vec<ContainerSpec>,
-    pub attachments: Option<Vec<AttachmentSpec>>,
+    #[serde(default)]
+    pub attachments: Vec<AttachmentSpec>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
@@ -88,7 +91,7 @@ pub struct ContainerSpec {
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct PortSpec {
-    pub name: String,
+    pub name: Option<String>,
     pub port: u16,
     pub protocol: String,
     pub app_protocol: Option<String>,

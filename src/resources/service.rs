@@ -27,7 +27,7 @@ pub async fn create(
     let api: Api<Service> = Api::namespaced(ctx.client.clone(), namespace);
 
     // create ClusterIP service
-    if container.ports.is_empty() {
+    if !container.ports.is_empty() {
         let service_name = container.hostname.to_string();
         let svc = make_svc(
             &service_name,
@@ -54,7 +54,7 @@ pub async fn create(
         .filter(|p| p.r#type == PortType::PublicPort)
         .cloned()
         .collect::<Vec<_>>();
-    if node_ports.is_empty() {
+    if !node_ports.is_empty() {
         let service_name = format!("{}-node-port", container.hostname);
         let svc = make_svc(
             &service_name,
@@ -113,7 +113,7 @@ fn make_svc(
                 ports
                     .iter()
                     .map(|p| ServicePort {
-                        name: Some(p.name.to_owned()),
+                        name: p.name.to_owned(),
                         port: p.port as i32,
                         protocol: Some(p.protocol.to_uppercase()),
                         ..Default::default()
@@ -149,9 +149,7 @@ pub async fn discover_endpoints(
                             svc.spec
                                 .and_then(|spec| spec.ports)
                                 .and_then(|ports| {
-                                    ports
-                                        .into_iter()
-                                        .find(|p| p.name.as_deref() == Some(&port.name))
+                                    ports.into_iter().find(|p| p.port as u16 == port.port)
                                 })
                                 .and_then(|p| p.node_port)
                                 .unwrap_or(0) as u16
@@ -160,7 +158,9 @@ pub async fn discover_endpoints(
                     };
 
                     endpoints.push(ServiceEndpoint {
-                        name: port.name.clone(),
+                        name: (port.name.to_owned())
+                            .unwrap_or(port.port.to_string())
+                            .to_owned(),
                         hostname: class.spec.gateway.domain.clone(),
                         port: actual_port,
                         protocol: "TCP".to_string(),
@@ -183,7 +183,9 @@ pub async fn discover_endpoints(
                     let is_tls = port.r#type == PortType::PublicTlsRoute;
 
                     endpoints.push(ServiceEndpoint {
-                        name: port.name.clone(),
+                        name: (port.name.to_owned())
+                            .unwrap_or(port.port.to_string())
+                            .clone(),
                         hostname,
                         port: if is_tls {
                             class.spec.gateway.tls_port

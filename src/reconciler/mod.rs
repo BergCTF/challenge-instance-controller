@@ -1,9 +1,7 @@
 use crate::{
     config::ControllerConfig,
-    crds::{
-        Challenge, ChallengeInstance, ChallengeInstanceClass, ChallengeInstanceStatus, DateTime,
-        Phase,
-    },
+    crds::{Challenge, ChallengeInstance, ChallengeInstanceClass, ChallengeInstanceStatus, Phase},
+    date_time::DateTime,
     error::{Error, Result},
     telemetry::Metrics,
 };
@@ -162,7 +160,6 @@ async fn initialize_instance(
     ctx: Arc<Context>,
 ) -> Result<Action> {
     let instance_id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
     let expires_at = timeout::calculate_expiry(
         instance
             .spec
@@ -174,8 +171,8 @@ async fn initialize_instance(
     update_status(&instance, &ctx, |status| {
         status.instance_id = Some(instance_id);
         status.phase = Some(Phase::Pending);
-        status.started_at = Some(DateTime(now));
-        status.expires_at = Some(DateTime(expires_at));
+        status.started_at = Some(DateTime::now());
+        status.expires_at = Some(DateTime::from(expires_at));
     })
     .await?;
 

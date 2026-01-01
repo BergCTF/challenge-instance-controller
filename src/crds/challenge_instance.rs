@@ -1,26 +1,8 @@
-use std::borrow::Cow;
-
 use kube::CustomResource;
-use schemars::{json_schema, JsonSchema};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-/// Wrapper type for RFC3339 datetime strings in CRDs
-#[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(transparent)]
-pub struct DateTime(pub String);
-
-impl JsonSchema for DateTime {
-    fn schema_name() -> Cow<'static, str> {
-        "DateTime".into()
-    }
-
-    fn json_schema(_gen: &mut schemars::SchemaGenerator) -> schemars::Schema {
-        json_schema!({
-            "type": "string",
-            "format": "date-time"
-        })
-    }
-}
+use crate::date_time::DateTime;
 
 /// ChallengeInstance is the primary resource managed by this controller
 /// It is cluster scoped since it manages namespaces

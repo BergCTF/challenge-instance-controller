@@ -11,7 +11,7 @@ pub use challenge::{
 };
 pub use challenge_instance::{
     ChallengeInstance, ChallengeInstanceSpec, ChallengeInstanceStatus, ChallengeRef, Condition,
-    ConditionStatus, DateTime, Phase, ServiceEndpoint, TerminationReason,
+    ConditionStatus, Phase, ServiceEndpoint, TerminationReason,
 };
 pub use challenge_instance_class::{
     ChallengeInstanceClass, ChallengeInstanceClassSpec, GatewayConfig, ImagePullConfig,

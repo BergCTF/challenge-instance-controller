@@ -240,7 +240,7 @@ pub async fn reconcile_starting(
 
         Ok(Action::requeue(duration))
     } else {
-        info!(
+        debug!(
             "Waiting for pods to become ready for instance {}",
             instance.name_any()
         );

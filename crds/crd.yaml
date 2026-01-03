@@ -25,8 +25,10 @@ spec:
             description: Challenge resource (read-only from controller perspective)
             properties:
               allowOutboundTraffic:
+                default: false
                 type: boolean
               attachments:
+                default: []
                 items:
                   properties:
                     downloadImage:
@@ -46,7 +48,6 @@ spec:
                   required:
                   - fileName
                   type: object
-                nullable: true
                 type: array
               author:
                 type: string
@@ -55,6 +56,7 @@ spec:
                   type: string
                 type: array
               containers:
+                default: []
                 items:
                   properties:
                     additionalCapabilities:
@@ -127,6 +129,7 @@ spec:
                             nullable: true
                             type: string
                           name:
+                            nullable: true
                             type: string
                           port:
                             format: uint16
@@ -143,7 +146,6 @@ spec:
                             - publicTlsRoute
                             type: string
                         required:
-                        - name
                         - port
                         - protocol
                         - type
@@ -203,6 +205,7 @@ spec:
               flag:
                 type: string
               flagFormat:
+                nullable: true
                 type: string
               hideUntil:
                 format: date-time
@@ -218,14 +221,11 @@ spec:
                   type: string
                 type: array
             required:
-            - allowOutboundTraffic
             - author
             - categories
-            - containers
             - description
             - difficulty
             - flag
-            - flagFormat
             type: object
         required:
         - spec
@@ -276,7 +276,11 @@ spec:
         description: Auto-generated derived type for ChallengeInstanceSpec via `CustomResource`
         properties:
           spec:
-            description: ChallengeInstance is the primary resource managed by this controller
+            description: |-
+              ChallengeInstance is the primary resource managed by this controller
+              It is cluster scoped since it manages namespaces
+              In the future, it may be beneficial to expose a namespace scoped challenge instance to allow
+              individual challenge authors to instance their challenges
             properties:
               challengeRef:
                 description: Reference to the Challenge resource
@@ -509,8 +513,8 @@ spec:
                     description: HTTP listener name in the Gateway
                     type: string
                   httpPort:
-                    default: 80
-                    description: HTTP port exposed by the Gateway
+                    default: 1337
+                    description: HTTPS port exposed by the Gateway
                     format: uint16
                     maximum: 65535.0
                     minimum: 0.0
@@ -525,8 +529,8 @@ spec:
                     description: TLS listener name in the Gateway
                     type: string
                   tlsPort:
-                    default: 443
-                    description: TLS port exposed by the Gateway
+                    default: 31337
+                    description: TLS-wrapped TCP port exposed by the Gateway
                     format: uint16
                     maximum: 65535.0
                     minimum: 0.0

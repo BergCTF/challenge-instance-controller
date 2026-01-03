@@ -18,13 +18,16 @@ use std::collections::BTreeMap;
 use tracing::info;
 
 pub async fn create(
+    class: &ChallengeInstanceClass,
     instance: &ChallengeInstance,
     _challenge: &Challenge,
     container: &ContainerSpec,
     namespace: &str,
     ctx: &Context,
-) -> Result<()> {
+) -> Result<Vec<ServiceEndpoint>> {
     let api: Api<Service> = Api::namespaced(ctx.client.clone(), namespace);
+
+    let mut endpoints = vec![];
 
     // create ClusterIP service
     if !container.ports.is_empty() {
@@ -64,16 +67,43 @@ pub async fn create(
             &node_ports,
             instance.controller_owner_ref(&()).unwrap(),
         );
-        match api.create(&PostParams::default(), &svc).await {
-            Ok(_) => info!("Created service {} in {}", service_name, namespace),
-            Err(kube::Error::Api(ae)) if ae.code == 409 => {
-                info!("Service {} already exists", service_name)
+        let svc = api.create(&PostParams::default(), &svc).await;
+
+        if let Ok(svc) = svc {
+            for port in &node_ports {
+                endpoints.push(ServiceEndpoint {
+                    name: (port.name.to_owned())
+                        .unwrap_or(port.port.to_string())
+                        .to_owned(),
+                    hostname: class.spec.gateway.domain.clone(),
+                    port: svc
+                        .spec
+                        .to_owned()
+                        .unwrap()
+                        .ports
+                        .unwrap()
+                        .iter()
+                        .find(|p| p.port as u16 == port.port)
+                        .unwrap()
+                        .node_port
+                        .unwrap_or_default() as u16,
+                    protocol: "TCP".to_string(),
+                    app_protocol: port.app_protocol.clone(),
+                    tls: Some(false),
+                });
             }
-            Err(e) => return Err(e.into()),
-        };
+        } else if let Err(kube::Error::Api(ae)) = svc {
+            if ae.code == 409 {
+                info!("Service {} already exists", service_name)
+            } else {
+                return Err(kube::Error::Api(ae).into());
+            }
+        } else if let Err(e) = svc {
+            return Err(e.into());
+        }
     }
 
-    Ok(())
+    Ok(endpoints)
 }
 
 fn make_svc(
@@ -194,9 +224,9 @@ pub async fn discover_endpoints(
                         },
                         protocol: "TCP".to_string(),
                         app_protocol: Some(if is_tls {
-                            "HTTPS".to_string()
+                            "TCP".to_string()
                         } else {
-                            "HTTP".to_string()
+                            "HTTPS".to_string()
                         }),
                         tls: Some(is_tls),
                     });

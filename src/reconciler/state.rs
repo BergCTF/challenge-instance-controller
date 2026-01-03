@@ -90,17 +90,44 @@ pub async fn reconcile_creating(
     // 3. Create network policy
     resources::network_policy::create(&instance, &challenge, &namespace_name, &class, &ctx).await?;
 
+    let mut endpoints = Vec::new();
+
     // 4. For each container, create resources
     for container in &challenge.spec.containers {
         // Services
-        // TODO: headless service parity
-        resources::service::create(&instance, &challenge, container, &namespace_name, &ctx).await?;
+        endpoints.extend(
+            resources::service::create(
+                &class,
+                &instance,
+                &challenge,
+                container,
+                &namespace_name,
+                &ctx,
+            )
+            .await?,
+        );
 
         // Gateway API routes
-        resources::gateway::create_http_routes(&instance, container, &namespace_name, &class, &ctx)
-            .await?;
-        resources::gateway::create_tls_routes(&instance, container, &namespace_name, &class, &ctx)
-            .await?;
+        endpoints.extend(
+            resources::gateway::create_http_routes(
+                &instance,
+                container,
+                &namespace_name,
+                &class,
+                &ctx,
+            )
+            .await?,
+        );
+        endpoints.extend(
+            resources::gateway::create_tls_routes(
+                &instance,
+                container,
+                &namespace_name,
+                &class,
+                &ctx,
+            )
+            .await?,
+        );
 
         // ConfigMaps for flags
         if let Some(ref dynamic_flag) = container.dynamic_flag {
@@ -129,6 +156,8 @@ pub async fn reconcile_creating(
         .await?;
     }
 
+    info!("Collected {} endpoints", endpoints.len());
+    dbg!(&endpoints);
     // Update status
     let now = chrono::Utc::now();
     update_status(&instance, &ctx, |status| {
@@ -150,6 +179,7 @@ pub async fn reconcile_creating(
                 message: Some("All resources created".to_string()),
             },
         ]);
+        status.services = endpoints;
     })
     .await?;
 
@@ -159,8 +189,8 @@ pub async fn reconcile_creating(
 /// Starting phase - wait for pods to be ready
 pub async fn reconcile_starting(
     instance: Arc<ChallengeInstance>,
-    challenge: Challenge,
-    class: ChallengeInstanceClass,
+    _challenge: Challenge,
+    _class: ChallengeInstanceClass,
     ctx: Arc<Context>,
 ) -> Result<Action> {
     let namespace = instance
@@ -178,16 +208,10 @@ pub async fn reconcile_starting(
             instance.name_any()
         );
 
-        // Discover service endpoints
-        let endpoints =
-            resources::service::discover_endpoints(&instance, &challenge, namespace, &class, &ctx)
-                .await?;
-
         let now = chrono::Utc::now();
         update_status(&instance, &ctx, |status| {
             status.phase = Some(Phase::Running);
             status.ready_at = Some(DateTime(now));
-            status.services = endpoints;
             status.conditions.push(Condition {
                 r#type: "PodsReady".to_string(),
                 status: ConditionStatus::True,

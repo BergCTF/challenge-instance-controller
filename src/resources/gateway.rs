@@ -1,8 +1,8 @@
 use crate::{
     crds::{
         BackendRef, ChallengeInstance, ChallengeInstanceClass, ContainerSpec, HTTPBackendRef,
-        HTTPRoute, HTTPRouteRule, HTTPRouteSpec, ParentReference, PortType, TLSRoute, TLSRouteRule,
-        TLSRouteSpec,
+        HTTPRoute, HTTPRouteRule, HTTPRouteSpec, ParentReference, PortType, ServiceEndpoint,
+        TLSRoute, TLSRouteRule, TLSRouteSpec,
     },
     error::{Error, Result},
     reconciler::Context,
@@ -22,14 +22,15 @@ pub async fn create_http_routes(
     namespace: &str,
     class: &ChallengeInstanceClass,
     ctx: &Context,
-) -> Result<Vec<String>> {
+) -> Result<Vec<ServiceEndpoint>> {
     let api: Api<HTTPRoute> = Api::namespaced(ctx.client.clone(), namespace);
-    let mut hostnames = Vec::new();
+
+    let mut endpoints = Vec::new();
 
     for port in &container.ports {
         if port.r#type == PortType::PublicHttpRoute {
             let service_guid = Uuid::new_v4();
-            let hostname = format!("{}.{}", service_guid, class.spec.gateway.domain);
+            let mut hostname = format!("{}.{}", service_guid, class.spec.gateway.domain);
 
             let route_name = format!("{}-{}", container.hostname, port.port);
 
@@ -92,18 +93,28 @@ pub async fn create_http_routes(
             match api.create(&PostParams::default(), &route).await {
                 Ok(_) => {
                     info!("Created HTTPRoute {} in {}", route_name, namespace);
-                    hostnames.push(format!("{}:{}", hostname, class.spec.gateway.http_port));
                 }
                 Err(kube::Error::Api(ae)) if ae.code == 409 => {
+                    let route = api.get(&route.metadata.name.unwrap()).await?;
+                    hostname = route.spec.hostnames.unwrap().first().unwrap().to_owned();
                     info!("HTTPRoute {} already exists", route_name);
-                    hostnames.push(format!("{}:{}", hostname, class.spec.gateway.http_port));
                 }
                 Err(e) => return Err(Error::from(e)),
             }
+            endpoints.push(ServiceEndpoint {
+                name: (port.name.to_owned())
+                    .unwrap_or(port.port.to_string())
+                    .to_owned(),
+                hostname,
+                port: class.spec.gateway.http_port,
+                protocol: "TCP".to_string(),
+                app_protocol: Some("HTTP".to_string()),
+                tls: Some(true),
+            });
         }
     }
 
-    Ok(hostnames)
+    Ok(endpoints)
 }
 
 /// Create TLSRoute for publicTlsRoute ports
@@ -113,14 +124,14 @@ pub async fn create_tls_routes(
     namespace: &str,
     class: &ChallengeInstanceClass,
     ctx: &Context,
-) -> Result<Vec<String>> {
+) -> Result<Vec<ServiceEndpoint>> {
     let api: Api<TLSRoute> = Api::namespaced(ctx.client.clone(), namespace);
-    let mut hostnames = Vec::new();
+    let mut endpoints = Vec::new();
 
     for port in &container.ports {
         if port.r#type == PortType::PublicTlsRoute {
             let service_guid = Uuid::new_v4();
-            let hostname = format!("{}.{}", service_guid, class.spec.gateway.domain);
+            let mut hostname = format!("{}.{}", service_guid, class.spec.gateway.domain);
 
             let route_name = format!("{}-{}", container.hostname, port.port);
 
@@ -182,16 +193,26 @@ pub async fn create_tls_routes(
             match api.create(&PostParams::default(), &route).await {
                 Ok(_) => {
                     info!("Created TLSRoute {} in {}", route_name, namespace);
-                    hostnames.push(format!("{}:{}", hostname, class.spec.gateway.tls_port));
                 }
                 Err(kube::Error::Api(ae)) if ae.code == 409 => {
                     info!("TLSRoute {} already exists", route_name);
-                    hostnames.push(format!("{}:{}", hostname, class.spec.gateway.tls_port));
+                    let route = api.get(&route.metadata.name.unwrap()).await?;
+                    hostname = route.spec.hostnames.unwrap().first().unwrap().to_owned();
                 }
                 Err(e) => return Err(Error::from(e)),
             }
+            endpoints.push(ServiceEndpoint {
+                name: (port.name.to_owned())
+                    .unwrap_or(port.port.to_string())
+                    .to_owned(),
+                hostname,
+                port: class.spec.gateway.tls_port,
+                protocol: "TCP".to_string(),
+                app_protocol: Some("TCP".to_string()),
+                tls: Some(true),
+            });
         }
     }
 
-    Ok(hostnames)
+    Ok(endpoints)
 }

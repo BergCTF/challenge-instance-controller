@@ -62,11 +62,11 @@ pub struct GatewayConfig {
     /// Challenge domain for routing (e.g., challenges.example.com)
     pub domain: String,
 
-    /// HTTP port exposed by the Gateway
+    /// HTTPS port exposed by the Gateway
     #[serde(default = "default_http_port")]
     pub http_port: u16,
 
-    /// TLS port exposed by the Gateway
+    /// TLS-wrapped TCP port exposed by the Gateway
     #[serde(default = "default_tls_port")]
     pub tls_port: u16,
 }
@@ -148,11 +148,11 @@ pub struct PodSecurityContextConfig {
 }
 
 fn default_http_port() -> u16 {
-    80
+    1337
 }
 
 fn default_tls_port() -> u16 {
-    443
+    31337
 }
 
 fn default_image_pull_policy() -> String {

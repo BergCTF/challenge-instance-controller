@@ -84,14 +84,21 @@
 
   outputs = {
     berg-controller = config.languages.rust.import ./. { };
-  };
-
-  containers = {
-    "controller" = {
-      copyToRoot = [ ];
-      entrypoint = [ "${config.outputs.berg-controller}/bin/berg-controller" ];
+    container = inputs.nix2container.packages.x86_64-linux.nix2container.buildImage {
+      name = "registry.int.swiss.dev/berg/controller";
+      config = {
+        entrypoint = [ "${config.outputs.berg-controller}/bin/berg-controller" ];
+      };
     };
   };
+
+  # currently containers does not support minimal images and will include the whole devenv :(
+  # containers = {
+  #   "controller" = {
+  #     copyToRoot = [ ];
+  #     entrypoint = [ "${config.outputs.berg-controller}/bin/berg-controller" ];
+  #   };
+  # };
 
   # https://devenv.sh/tests/
   enterTest = ''

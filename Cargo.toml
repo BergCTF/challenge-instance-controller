@@ -16,6 +16,10 @@ path = "src/bin/crdgen.rs"
 name = "berg_operator"
 path = "src/lib.rs"
 
+[profile.release]
+strip = true
+lto = true
+
 [dependencies]
 # Kubernetes client and runtime
 kube = { version = "2.0", features = ["runtime", "derive", "client", "ws"] }

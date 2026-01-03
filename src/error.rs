@@ -36,6 +36,9 @@ pub enum Error {
 
     #[error("Finalizer error: {0}")]
     FinalizerError(String),
+
+    #[error("Waiting for dependencies to become ready")]
+    ProgressingWait,
 }
 
 impl Error {

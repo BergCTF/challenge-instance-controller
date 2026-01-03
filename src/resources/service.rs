@@ -15,9 +15,11 @@ use kube::{
     Resource,
 };
 use std::collections::BTreeMap;
-use tracing::info;
+use tracing::{debug, info};
 
-pub async fn create(
+/// reconcile attempts to create ClusterIP and NodePort services for a deployment as required
+/// if the service already exists it returns Ok without attempting to mutate the object
+pub async fn reconcile(
     class: &ChallengeInstanceClass,
     instance: &ChallengeInstance,
     _challenge: &Challenge,
@@ -44,7 +46,7 @@ pub async fn create(
         match api.create(&PostParams::default(), &svc).await {
             Ok(_) => info!("Created service {} in {}", service_name, namespace),
             Err(kube::Error::Api(ae)) if ae.code == 409 => {
-                info!("Service {} already exists", service_name)
+                debug!("Service {} already exists", service_name)
             }
             Err(e) => return Err(e.into()),
         };
@@ -73,7 +75,7 @@ pub async fn create(
             for port in &node_ports {
                 endpoints.push(ServiceEndpoint {
                     name: (port.name.to_owned())
-                        .unwrap_or(port.port.to_string())
+                        .unwrap_or(format!("{}:{}", container.hostname, port.port))
                         .to_owned(),
                     hostname: class.spec.gateway.domain.clone(),
                     port: svc
@@ -94,7 +96,7 @@ pub async fn create(
             }
         } else if let Err(kube::Error::Api(ae)) = svc {
             if ae.code == 409 {
-                info!("Service {} already exists", service_name)
+                debug!("Service {} already exists", service_name)
             } else {
                 return Err(kube::Error::Api(ae).into());
             }
@@ -154,86 +156,4 @@ fn make_svc(
         }),
         ..Default::default()
     }
-}
-
-pub async fn discover_endpoints(
-    instance: &ChallengeInstance,
-    challenge: &Challenge,
-    namespace: &str,
-    class: &ChallengeInstanceClass,
-    ctx: &Context,
-) -> Result<Vec<ServiceEndpoint>> {
-    let mut endpoints = Vec::new();
-    let api: Api<Service> = Api::namespaced(ctx.client.clone(), namespace);
-
-    for container in &challenge.spec.containers {
-        for port in &container.ports {
-            match port.r#type {
-                PortType::InternalPort => continue,
-                PortType::PublicPort => {
-                    // Query the service to get the actual NodePort assigned by Kubernetes
-                    let service_name = format!("{}-node-port", container.hostname);
-                    let actual_port = match api.get(&service_name).await {
-                        Ok(svc) => {
-                            // Extract the NodePort from the service
-                            svc.spec
-                                .and_then(|spec| spec.ports)
-                                .and_then(|ports| {
-                                    ports.into_iter().find(|p| p.port as u16 == port.port)
-                                })
-                                .and_then(|p| p.node_port)
-                                .unwrap_or(0) as u16
-                        }
-                        Err(_) => 0,
-                    };
-
-                    endpoints.push(ServiceEndpoint {
-                        name: (port.name.to_owned())
-                            .unwrap_or(port.port.to_string())
-                            .to_owned(),
-                        hostname: class.spec.gateway.domain.clone(),
-                        port: actual_port,
-                        protocol: "TCP".to_string(),
-                        app_protocol: port.app_protocol.clone(),
-                        tls: Some(false),
-                    });
-                }
-                PortType::PublicHttpRoute | PortType::PublicTlsRoute => {
-                    // For HTTP/TLS routes, construct hostname from instance ID
-                    let hostname = if let Some(ref status) = instance.status {
-                        if let Some(ref instance_id) = status.instance_id {
-                            format!("{}.{}", instance_id, class.spec.gateway.domain)
-                        } else {
-                            class.spec.gateway.domain.clone()
-                        }
-                    } else {
-                        class.spec.gateway.domain.clone()
-                    };
-
-                    let is_tls = port.r#type == PortType::PublicTlsRoute;
-
-                    endpoints.push(ServiceEndpoint {
-                        name: (port.name.to_owned())
-                            .unwrap_or(port.port.to_string())
-                            .clone(),
-                        hostname,
-                        port: if is_tls {
-                            class.spec.gateway.tls_port
-                        } else {
-                            class.spec.gateway.http_port
-                        },
-                        protocol: "TCP".to_string(),
-                        app_protocol: Some(if is_tls {
-                            "TCP".to_string()
-                        } else {
-                            "HTTPS".to_string()
-                        }),
-                        tls: Some(is_tls),
-                    });
-                }
-            }
-        }
-    }
-
-    Ok(endpoints)
 }

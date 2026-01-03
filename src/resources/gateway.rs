@@ -12,10 +12,11 @@ use kube::{
     Resource,
 };
 use std::collections::BTreeMap;
-use tracing::info;
+use tracing::{debug, info};
 use uuid::Uuid;
 
-/// Create HTTPRoute for publicHttpRoute ports
+// create_http_routes attempts to create http(s) routes for the given workload as required
+// if the route object already exists it continues without attempting to mutate the object
 pub async fn create_http_routes(
     instance: &ChallengeInstance,
     container: &ContainerSpec,
@@ -97,13 +98,13 @@ pub async fn create_http_routes(
                 Err(kube::Error::Api(ae)) if ae.code == 409 => {
                     let route = api.get(&route.metadata.name.unwrap()).await?;
                     hostname = route.spec.hostnames.unwrap().first().unwrap().to_owned();
-                    info!("HTTPRoute {} already exists", route_name);
+                    debug!("HTTPRoute {} already exists", route_name);
                 }
                 Err(e) => return Err(Error::from(e)),
             }
             endpoints.push(ServiceEndpoint {
                 name: (port.name.to_owned())
-                    .unwrap_or(port.port.to_string())
+                    .unwrap_or(format!("{}:{}", container.hostname, port.port))
                     .to_owned(),
                 hostname,
                 port: class.spec.gateway.http_port,
@@ -117,7 +118,8 @@ pub async fn create_http_routes(
     Ok(endpoints)
 }
 
-/// Create TLSRoute for publicTlsRoute ports
+// create_tls_routes attempts to create tls routes for the given workload as required
+// if the route object already exists it continues without attempting to mutate the object
 pub async fn create_tls_routes(
     instance: &ChallengeInstance,
     container: &ContainerSpec,
@@ -195,7 +197,7 @@ pub async fn create_tls_routes(
                     info!("Created TLSRoute {} in {}", route_name, namespace);
                 }
                 Err(kube::Error::Api(ae)) if ae.code == 409 => {
-                    info!("TLSRoute {} already exists", route_name);
+                    debug!("TLSRoute {} already exists", route_name);
                     let route = api.get(&route.metadata.name.unwrap()).await?;
                     hostname = route.spec.hostnames.unwrap().first().unwrap().to_owned();
                 }
@@ -203,7 +205,7 @@ pub async fn create_tls_routes(
             }
             endpoints.push(ServiceEndpoint {
                 name: (port.name.to_owned())
-                    .unwrap_or(port.port.to_string())
+                    .unwrap_or(format!("{}:{}", container.hostname, port.port))
                     .to_owned(),
                 hostname,
                 port: class.spec.gateway.tls_port,

@@ -5,14 +5,17 @@ use crate::{
     error::Result,
     utils,
 };
-use k8s_openapi::api::core::v1::Namespace;
+use k8s_openapi::api::{
+    apps::v1::Deployment,
+    core::v1::{Namespace, Pod},
+};
 use kube::{
-    api::{Api, DeleteParams, Patch, PatchParams},
+    api::{Api, DeleteParams, ListParams, Patch, PatchParams},
     runtime::controller::Action,
     ResourceExt,
 };
-use std::sync::Arc;
-use tracing::info;
+use std::{sync::Arc, time::Duration};
+use tracing::{debug, info};
 
 pub async fn cleanup(instance: Arc<ChallengeInstance>, ctx: Arc<Context>) -> Result<Action> {
     info!("Cleaning up ChallengeInstance {}", instance.name_any());
@@ -35,6 +38,30 @@ pub async fn cleanup(instance: Arc<ChallengeInstance>, ctx: Arc<Context>) -> Res
         )
     };
 
+    // Clean up workloads before cleaning up NetworkPolicies
+    let deployments_api: Api<Deployment> = Api::namespaced(ctx.client.clone(), &namespace_name);
+    let pods_api: Api<Pod> = Api::namespaced(ctx.client.clone(), &namespace_name);
+    let mut deleting = false;
+    for deploy in deployments_api.list(&ListParams::default()).await? {
+        deleting = true;
+        let selectors = deploy.spec.unwrap().selector;
+        if pods_api
+            .list(&ListParams::default().labels_from(&selectors.try_into().unwrap()))
+            .await?
+            .iter()
+            .any(|p| p.status.to_owned().unwrap().phase.unwrap() != "Terminating")
+        {
+            deployments_api
+                .delete(&deploy.metadata.name.unwrap(), &DeleteParams::background())
+                .await?;
+        }
+    }
+
+    if deleting {
+        // wait for resources to be deleted before continuing
+        return Ok(Action::requeue(Duration::from_secs(2)));
+    }
+
     // Delete namespace (cascades to all resources)
     let namespaces: Api<Namespace> = Api::all(ctx.client.clone());
 
@@ -44,9 +71,10 @@ pub async fn cleanup(instance: Arc<ChallengeInstance>, ctx: Arc<Context>) -> Res
             namespaces
                 .delete(&namespace_name, &DeleteParams::default())
                 .await?;
+            return Ok(Action::requeue(Duration::from_secs(2)));
         }
         Err(kube::Error::Api(ae)) if ae.code == 404 => {
-            info!("Namespace {} already deleted", namespace_name);
+            debug!("Namespace {} already deleted", namespace_name);
         }
         Err(e) => return Err(e.into()),
     }

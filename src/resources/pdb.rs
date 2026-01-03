@@ -14,7 +14,9 @@ use kube::{
 use std::collections::BTreeMap;
 use tracing::info;
 
-pub async fn create(
+/// reconcile attempts to create pdbs for the given workload
+/// if the pdb already exists it returns Ok without attempting to mutate the object
+pub async fn reconcile(
     instance: &ChallengeInstance,
     container: &ContainerSpec,
     namespace: &str,

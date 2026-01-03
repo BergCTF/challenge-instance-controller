@@ -207,7 +207,7 @@ where
 
 /// Error handling for reconciliation
 pub fn error_policy(_instance: Arc<ChallengeInstance>, error: &Error, ctx: Arc<Context>) -> Action {
-    error!("Reconciliation error: {:?}", error);
+    error!("[*] Reconciliation error: {:?}", error);
     ctx.metrics.record_error();
 
     if error.is_retryable() {

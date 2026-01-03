@@ -62,7 +62,9 @@ async fn main() -> anyhow::Result<()> {
         .for_each(|res| async move {
             match res {
                 Ok(o) => info!("Reconciled: {:?}", o),
-                Err(e) => tracing::error!("Reconciliation error: {:?}", e),
+                // if the object cannot be found it was likely deleted. we can ignore this.
+                Err(kube::runtime::controller::Error::ObjectNotFound(_)) => {}
+                Err(e) => tracing::error!("[!] Reconciliation error: {:?}", e),
             }
         })
         .await;

@@ -18,8 +18,10 @@ use kube::{
 use std::collections::BTreeMap;
 use tracing::info;
 
-/// Create CiliumNetworkPolicy for challenge instance
-pub async fn create(
+/// reconcile attempts to create a CiliumNetworkPolicy for the challenge instance
+/// if a CiliumNetworkPolicy with that name already exists it returns Ok
+/// it does not attempt to mutate existing policies
+pub async fn reconcile(
     instance: &ChallengeInstance,
     challenge: &Challenge,
     namespace: &str,

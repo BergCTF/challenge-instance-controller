@@ -4,13 +4,13 @@ use crate::{
         Challenge, ChallengeInstance, ChallengeInstanceClass, Condition, ConditionStatus, Phase,
     },
     date_time::DateTime,
-    error::Result,
+    error::{Error, Result},
     resources, utils,
 };
 use kube::{runtime::controller::Action, ResourceExt};
 use std::sync::Arc;
 use std::time::Duration;
-use tracing::info;
+use tracing::{debug, info};
 
 /// Pending → Creating transition
 pub async fn reconcile_pending(
@@ -76,10 +76,10 @@ pub async fn reconcile_creating(
         &instance.spec.owner_id,
     );
 
-    // 1. Create namespace
-    resources::namespace::create(&instance, &namespace_name, &ctx).await?;
+    resources::namespace::reconcile(&instance, &namespace_name, &ctx).await?;
+    resources::network_policy::reconcile(&instance, &challenge, &namespace_name, &class, &ctx)
+        .await?;
 
-    // 2. Copy image pull secret if configured
     if let Some(ref image_pull) = class.spec.image_pull {
         if let Some(ref secret_name) = image_pull.secret_name {
             resources::namespace::copy_pull_secret(&ctx.client, secret_name, &namespace_name)
@@ -87,16 +87,13 @@ pub async fn reconcile_creating(
         }
     }
 
-    // 3. Create network policy
-    resources::network_policy::create(&instance, &challenge, &namespace_name, &class, &ctx).await?;
-
     let mut endpoints = Vec::new();
 
     // 4. For each container, create resources
     for container in &challenge.spec.containers {
         // Services
         endpoints.extend(
-            resources::service::create(
+            resources::service::reconcile(
                 &class,
                 &instance,
                 &challenge,
@@ -142,26 +139,35 @@ pub async fn reconcile_creating(
         }
 
         // PodDisruptionBudget
-        resources::pdb::create(&instance, container, &namespace_name, &ctx).await?;
+        resources::pdb::reconcile(&instance, container, &namespace_name, &ctx).await?;
 
         // Deployment
-        resources::deployment::create(
+        match resources::deployment::reconcile(
             &instance,
             &challenge,
             container,
             &namespace_name,
             &class,
+            &endpoints,
             &ctx,
         )
-        .await?;
+        .await
+        {
+            Ok(_) => debug!("reconciled deployment"),
+            Err(Error::ProgressingWait) => {
+                debug!("deferring deployment while we wait for dependencies to become available");
+                return Ok(Action::requeue(Duration::from_secs(2)));
+            }
+            Err(err) => return Err(err),
+        };
     }
 
-    info!("Collected {} endpoints", endpoints.len());
-    dbg!(&endpoints);
+    debug!("Collected {} endpoints", endpoints.len());
     // Update status
     let now = chrono::Utc::now();
     update_status(&instance, &ctx, |status| {
         status.namespace = Some(namespace_name.clone());
+        // move on to next phase
         status.phase = Some(Phase::Starting);
         status.conditions.extend([
             Condition {

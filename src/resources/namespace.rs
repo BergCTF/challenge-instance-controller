@@ -11,7 +11,9 @@ use kube::{
 };
 use tracing::info;
 
-pub async fn create(
+/// reconcile attempts to create a Namespace
+/// if the Namespace already exists it returns OK
+pub async fn reconcile(
     instance: &ChallengeInstance,
     namespace_name: &str,
     ctx: &Context,

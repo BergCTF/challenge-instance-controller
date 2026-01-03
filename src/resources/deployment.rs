@@ -1,6 +1,6 @@
 use crate::{
-    crds::{Challenge, ChallengeInstance, ChallengeInstanceClass, ContainerSpec},
-    error::Result,
+    crds::{Challenge, ChallengeInstance, ChallengeInstanceClass, ContainerSpec, ServiceEndpoint},
+    error::{self, Result},
     flag,
     reconciler::Context,
     resources::labels,
@@ -22,17 +22,26 @@ use kube::{
 use std::collections::BTreeMap;
 use tracing::info;
 
-pub async fn create(
+pub async fn reconcile(
     instance: &ChallengeInstance,
     challenge: &Challenge,
     container_spec: &ContainerSpec,
     namespace: &str,
     class: &ChallengeInstanceClass,
+    endpoints: &[ServiceEndpoint],
     ctx: &Context,
 ) -> Result<()> {
     let api: Api<Deployment> = Api::namespaced(ctx.client.clone(), namespace);
 
-    let deployment = build_deployment(instance, challenge, container_spec, namespace, class, ctx)?;
+    let deployment = build_deployment(
+        instance,
+        challenge,
+        container_spec,
+        namespace,
+        class,
+        endpoints,
+        ctx,
+    )?;
 
     match api.create(&PostParams::default(), &deployment).await {
         Ok(_) => {
@@ -56,6 +65,7 @@ fn build_deployment(
     container_spec: &ContainerSpec,
     namespace: &str,
     class: &ChallengeInstanceClass,
+    endpoints: &[ServiceEndpoint],
     _ctx: &Context,
 ) -> Result<Deployment> {
     let container_name = &container_spec.hostname;
@@ -98,32 +108,24 @@ fn build_deployment(
                 crate::crds::PortType::InternalPort => {
                     format!("{}:{}", service_name, port.port)
                 }
-                crate::crds::PortType::PublicPort => {
-                    format!("{}:{}", class.spec.gateway.domain, port.port)
-                }
-                crate::crds::PortType::PublicHttpRoute => {
-                    let hostname = if let Some(ref status) = instance.status {
-                        if let Some(ref instance_id) = status.instance_id {
-                            format!("{}.{}", instance_id, class.spec.gateway.domain)
-                        } else {
-                            class.spec.gateway.domain.clone()
-                        }
-                    } else {
-                        class.spec.gateway.domain.clone()
-                    };
-                    format!("{}:{}", hostname, class.spec.gateway.http_port)
-                }
-                crate::crds::PortType::PublicTlsRoute => {
-                    let hostname = if let Some(ref status) = instance.status {
-                        if let Some(ref instance_id) = status.instance_id {
-                            format!("{}.{}", instance_id, class.spec.gateway.domain)
-                        } else {
-                            class.spec.gateway.domain.clone()
-                        }
-                    } else {
-                        class.spec.gateway.domain.clone()
-                    };
-                    format!("{}:{}", hostname, class.spec.gateway.tls_port)
+                crate::crds::PortType::PublicPort
+                | crate::crds::PortType::PublicHttpRoute
+                | crate::crds::PortType::PublicTlsRoute => {
+                    let endpoint = endpoints.iter().find(|e| {
+                        e.name
+                            == port
+                                .name
+                                .to_owned()
+                                .unwrap_or(format!("{}:{}", container.hostname, port.port))
+                    });
+                    if endpoint.is_none() {
+                        // endpoint was not created yet, wait with creating deployment
+                        return Err(error::Error::ProgressingWait);
+                    }
+
+                    let endpoint = endpoint.unwrap();
+
+                    format!("{}:{}", endpoint.hostname, endpoint.port)
                 }
             };
 

@@ -38,7 +38,7 @@ pub struct ChallengeSpec {
     pub author: String,
     pub description: String,
     pub flag: String,
-    pub flag_format: String,
+    pub flag_format: Option<String>,
     pub dynamic_flag_mode: Option<DynamicFlagMode>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[schemars(schema_with = "datetime_schema")]

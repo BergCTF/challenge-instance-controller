@@ -80,10 +80,11 @@ pub async fn cleanup(instance: Arc<ChallengeInstance>, ctx: Arc<Context>) -> Res
                 return Ok(Action::requeue(Duration::from_secs(2)));
             } else {
                 debug!("Namespace {} already terminating", namespace_name);
+                return Ok(Action::requeue(Duration::from_secs(2)));
             }
         }
         Err(kube::Error::Api(ae)) if ae.code == 404 => {
-            debug!("Namespace {} already deleted", namespace_name);
+            debug!("Namespace {} finished deleting", namespace_name);
         }
         Err(e) => return Err(e.into()),
     }

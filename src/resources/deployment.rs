@@ -341,30 +341,38 @@ fn build_resources(
         .resource_limits
         .as_ref()
         .and_then(|r| r.cpu.clone())
-        .unwrap_or(default_cpu_limit);
+        .unwrap_or(default_cpu_limit.to_owned());
     let cpu_request = container_spec
         .resource_requests
         .as_ref()
         .and_then(|r| r.cpu.clone())
         .unwrap_or(default_cpu_request);
 
-    limits.insert("cpu".to_string(), Quantity(cpu_limit));
-    requests.insert("cpu".to_string(), Quantity(cpu_request));
+    limits.insert("cpu".to_string(), Quantity(cpu_limit.to_owned()));
+    // if the limit does not match there's a chance the user changed it, so we don't set requests.
+    // we can probably improve this in the future.
+    if cpu_limit == default_cpu_limit {
+        requests.insert("cpu".to_string(), Quantity(cpu_request));
+    }
 
     // Memory
     let memory_limit = container_spec
         .resource_limits
         .as_ref()
         .and_then(|r| r.memory.clone())
-        .unwrap_or(default_memory_limit);
+        .unwrap_or(default_memory_limit.to_owned());
     let memory_request = container_spec
         .resource_requests
         .as_ref()
         .and_then(|r| r.memory.clone())
         .unwrap_or(default_memory_request);
 
-    limits.insert("memory".to_string(), Quantity(memory_limit));
-    requests.insert("memory".to_string(), Quantity(memory_request));
+    limits.insert("memory".to_string(), Quantity(memory_limit.to_owned()));
+    // if the limit does not match there's a chance the user changed it, so we don't set requests.
+    // we can probably improve this in the future.
+    if memory_limit == default_memory_limit {
+        requests.insert("memory".to_string(), Quantity(memory_request));
+    }
 
     ResourceRequirements {
         limits: Some(limits),

@@ -110,13 +110,11 @@ pub struct NetworkConfig {
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ImagePullConfig {
-    /// Image pull policy (Always, IfNotPresent, Never)
     #[serde(default = "default_image_pull_policy")]
     pub policy: String,
 
-    /// Name of secret containing registry credentials
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub secret_name: Option<String>,
+    #[serde(default)]
+    pub secret_names: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
@@ -155,6 +153,9 @@ fn default_tls_port() -> u16 {
     31337
 }
 
+/// We use Always for legacy reasons since a lot of library challenges use latest
+/// For performance a user is expected to use sha commit tags for images and set this to
+/// IfNotPresent
 fn default_image_pull_policy() -> String {
-    "IfNotPresent".to_string()
+    "Always".to_string()
 }

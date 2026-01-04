@@ -9,7 +9,7 @@ use kube::{
     api::{Api, PostParams},
     Client, Resource,
 };
-use tracing::info;
+use tracing::{debug, info, warn};
 
 /// reconcile attempts to create a Namespace
 /// if the Namespace already exists it returns OK
@@ -36,7 +36,7 @@ pub async fn reconcile(
             Ok(())
         }
         Err(kube::Error::Api(ae)) if ae.code == 409 => {
-            info!("Namespace {} already exists", namespace_name);
+            debug!("Namespace {} already exists", namespace_name);
             Ok(())
         }
         Err(e) => Err(Error::from(e)),
@@ -69,14 +69,14 @@ pub async fn copy_pull_secret(
                     Ok(())
                 }
                 Err(kube::Error::Api(ae)) if ae.code == 409 => {
-                    info!("Pull secret already exists in {}", target_namespace);
+                    debug!("Pull secret already exists in {}", target_namespace);
                     Ok(())
                 }
                 Err(e) => Err(Error::from(e)),
             }
         }
         Err(kube::Error::Api(ae)) if ae.code == 404 => {
-            info!("Pull secret {} not found, skipping", secret_name);
+            warn!("Pull secret {} not found, skipping", secret_name);
             Ok(())
         }
         Err(e) => Err(Error::from(e)),

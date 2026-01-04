@@ -123,6 +123,7 @@ spec:
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
                     ports:
+                      default: []
                       items:
                         properties:
                           appProtocol:
@@ -139,6 +140,7 @@ spec:
                           protocol:
                             type: string
                           type:
+                            default: internalPort
                             enum:
                             - internalPort
                             - publicPort
@@ -148,7 +150,6 @@ spec:
                         required:
                         - port
                         - protocol
-                        - type
                         type: object
                       type: array
                     readinessProbe:
@@ -182,7 +183,6 @@ spec:
                   required:
                   - hostname
                   - image
-                  - ports
                   type: object
                 type: array
               description:
@@ -547,13 +547,13 @@ spec:
                 nullable: true
                 properties:
                   policy:
-                    default: IfNotPresent
-                    description: Image pull policy (Always, IfNotPresent, Never)
+                    default: Always
                     type: string
-                  secretName:
-                    description: Name of secret containing registry credentials
-                    nullable: true
-                    type: string
+                  secretNames:
+                    default: []
+                    items:
+                      type: string
+                    type: array
                 type: object
               network:
                 description: Network configuration

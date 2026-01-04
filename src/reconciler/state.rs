@@ -60,7 +60,6 @@ pub async fn reconcile_pending(
     Ok(Action::requeue(Duration::from_secs(1)))
 }
 
-/// Creating phase - create all resources
 pub async fn reconcile_creating(
     instance: Arc<ChallengeInstance>,
     challenge: Challenge,
@@ -69,7 +68,6 @@ pub async fn reconcile_creating(
 ) -> Result<Action> {
     info!("Creating resources for instance {}", instance.name_any());
 
-    // Generate unique namespace per owner
     let namespace_name = utils::generate_namespace_name(
         &ctx.config.namespace_prefix,
         challenge.metadata.name.as_ref().unwrap(),
@@ -81,15 +79,13 @@ pub async fn reconcile_creating(
         .await?;
 
     if let Some(ref image_pull) = class.spec.image_pull {
-        if let Some(ref secret_name) = image_pull.secret_name {
-            resources::namespace::copy_pull_secret(&ctx.client, secret_name, &namespace_name)
-                .await?;
+        for secret in &image_pull.secret_names {
+            resources::namespace::copy_pull_secret(&ctx.client, secret, &namespace_name).await?;
         }
     }
 
     let mut endpoints = Vec::new();
 
-    // 4. For each container, create resources
     for container in &challenge.spec.containers {
         // Services
         endpoints.extend(
@@ -290,12 +286,10 @@ pub async fn reconcile_running(
     _class: ChallengeInstanceClass,
     ctx: Arc<Context>,
 ) -> Result<Action> {
-    // Check if expired (should be caught earlier, but double-check)
     if super::timeout::is_expired(&instance) {
         return super::timeout::terminate_expired(instance, ctx).await;
     }
 
-    // Requeue at expiration
     let expires_at_dt = instance
         .status
         .as_ref()
@@ -303,7 +297,9 @@ pub async fn reconcile_running(
         .expect("expiresAt should be set");
     let duration = (expires_at_dt.0 - chrono::Utc::now())
         .to_std()
-        .unwrap_or(Duration::from_secs(3600));
+        .unwrap_or(Duration::from_secs(600))
+        // requeue every 10 minutes just in case
+        .min(Duration::from_secs(600));
 
     Ok(Action::requeue(duration))
 }

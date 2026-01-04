@@ -20,7 +20,7 @@ use kube::{
     Client, Resource,
 };
 use std::collections::BTreeMap;
-use tracing::info;
+use tracing::{debug, info};
 
 pub async fn reconcile(
     instance: &ChallengeInstance,
@@ -52,7 +52,7 @@ pub async fn reconcile(
             Ok(())
         }
         Err(kube::Error::Api(ae)) if ae.code == 409 => {
-            info!("Deployment {} already exists", container_spec.hostname);
+            debug!("Deployment {} already exists", container_spec.hostname);
             Ok(())
         }
         Err(e) => Err(e.into()),
@@ -253,16 +253,21 @@ fn build_deployment(
             } else {
                 Some(volumes)
             },
-            image_pull_secrets: class
-                .spec
-                .image_pull
-                .as_ref()
-                .and_then(|ip| ip.secret_name.as_ref())
-                .map(|secret_name| {
-                    vec![k8s_openapi::api::core::v1::LocalObjectReference {
-                        name: secret_name.clone(),
-                    }]
-                }),
+            image_pull_secrets: Some(
+                class
+                    .spec
+                    .image_pull
+                    .as_ref()
+                    .map(|ip| ip.secret_names.to_owned())
+                    .unwrap_or_default()
+                    .iter()
+                    .map(
+                        |secret_name| k8s_openapi::api::core::v1::LocalObjectReference {
+                            name: secret_name.clone(),
+                        },
+                    )
+                    .collect(),
+            ),
             runtime_class_name: container_spec.runtime_class_name.clone().or_else(|| {
                 class
                     .spec

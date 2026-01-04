@@ -71,6 +71,7 @@ pub struct ContainerSpec {
     pub image: String,
     #[serde(default)]
     pub environment: HashMap<String, String>,
+    #[serde(default)]
     pub ports: Vec<PortSpec>,
     pub dynamic_flag: Option<DynamicFlag>,
     pub resource_requests: Option<ResourceSpec>,
@@ -95,12 +96,15 @@ pub struct PortSpec {
     pub port: u16,
     pub protocol: String,
     pub app_protocol: Option<String>,
+    #[serde(default)]
     pub r#type: PortType,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
 #[serde(rename_all = "camelCase")]
+#[derive(Default)]
 pub enum PortType {
+    #[default]
     InternalPort,
     PublicPort,
     PublicHttpRoute,

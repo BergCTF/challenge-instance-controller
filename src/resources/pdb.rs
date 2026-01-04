@@ -12,7 +12,7 @@ use kube::{
     Resource,
 };
 use std::collections::BTreeMap;
-use tracing::info;
+use tracing::{debug, info};
 
 /// reconcile attempts to create pdbs for the given workload
 /// if the pdb already exists it returns Ok without attempting to mutate the object
@@ -57,7 +57,7 @@ pub async fn reconcile(
             Ok(())
         }
         Err(kube::Error::Api(ae)) if ae.code == 409 => {
-            info!("PodDisruptionBudget {} already exists", pdb_name);
+            debug!("PodDisruptionBudget {} already exists", pdb_name);
             Ok(())
         }
         Err(e) => Err(e.into()),

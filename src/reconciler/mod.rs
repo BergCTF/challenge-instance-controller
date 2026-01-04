@@ -13,7 +13,7 @@ use kube::{
 };
 use std::sync::Arc;
 use std::time::Duration;
-use tracing::{error, info, instrument};
+use tracing::{debug, instrument, warn};
 
 pub mod finalizer;
 pub mod state;
@@ -32,7 +32,7 @@ pub struct Context {
 pub async fn reconcile(instance: Arc<ChallengeInstance>, ctx: Arc<Context>) -> Result<Action> {
     let name = instance.name_any();
 
-    info!("Reconciling ChallengeInstance {}", name);
+    debug!("Reconciling ChallengeInstance {}", name);
     ctx.metrics.record_reconcile();
 
     // Handle deletion
@@ -207,7 +207,7 @@ where
 
 /// Error handling for reconciliation
 pub fn error_policy(_instance: Arc<ChallengeInstance>, error: &Error, ctx: Arc<Context>) -> Action {
-    error!("[*] Reconciliation error: {:?}", error);
+    warn!("[*] Reconciliation error: {:?}", error);
     ctx.metrics.record_error();
 
     if error.is_retryable() {

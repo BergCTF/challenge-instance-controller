@@ -16,7 +16,7 @@ use kube::{
     Resource,
 };
 use std::collections::BTreeMap;
-use tracing::info;
+use tracing::{debug, info};
 
 /// reconcile attempts to create a CiliumNetworkPolicy for the challenge instance
 /// if a CiliumNetworkPolicy with that name already exists it returns Ok
@@ -134,7 +134,7 @@ pub async fn reconcile(
             Ok(())
         }
         Err(kube::Error::Api(ae)) if ae.code == 409 => {
-            info!("CiliumNetworkPolicy already exists in {}", namespace);
+            debug!("CiliumNetworkPolicy already exists in {}", namespace);
             Ok(())
         }
         Err(e) => Err(Error::from(e)),

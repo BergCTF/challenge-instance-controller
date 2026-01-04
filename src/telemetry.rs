@@ -45,6 +45,10 @@ pub fn init() {
 #[cfg(debug_assertions)]
 pub fn init() {
     tracing_subscriber::fmt()
+        .pretty()
+        .without_time()
+        .with_file(false)
+        .with_line_number(false)
         .with_env_filter(
             tracing_subscriber::EnvFilter::from_default_env()
                 .add_directive("berg_operator=info".parse().unwrap())

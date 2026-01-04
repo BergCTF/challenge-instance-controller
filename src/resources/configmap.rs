@@ -6,7 +6,7 @@ use crate::{
 use k8s_openapi::api::core::v1::ConfigMap;
 use kube::api::{Api, PostParams};
 use std::collections::BTreeMap;
-use tracing::info;
+use tracing::{debug, info};
 
 pub async fn create_flag_configmap(
     instance: &ChallengeInstance,
@@ -48,7 +48,7 @@ pub async fn create_flag_configmap(
         match api.create(&PostParams::default(), &cm).await {
             Ok(_) => info!("Created flag content ConfigMap in {}", namespace),
             Err(kube::Error::Api(ae)) if ae.code == 409 => {
-                info!("Flag content ConfigMap already exists")
+                debug!("Flag content ConfigMap already exists")
             }
             Err(e) => return Err(Error::from(e)),
         }
@@ -90,7 +90,7 @@ pub async fn create_flag_configmap(
         match api.create(&PostParams::default(), &cm).await {
             Ok(_) => info!("Created flag executable ConfigMap in {}", namespace),
             Err(kube::Error::Api(ae)) if ae.code == 409 => {
-                info!("Flag executable ConfigMap already exists")
+                debug!("Flag executable ConfigMap already exists")
             }
             Err(e) => return Err(Error::from(e)),
         }

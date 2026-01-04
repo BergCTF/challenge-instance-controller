@@ -5,8 +5,8 @@ metadata:
 spec:
   default: true
   gateway: 
-    name: berg
-    namespace: berg
+    name: traefik-gateway
+    namespace: traefik
     tlsListenerName: tls-chall
     httpListenerName: https-chall
-    domain: challenges.swiss.dev
+    domain: berg.localhost

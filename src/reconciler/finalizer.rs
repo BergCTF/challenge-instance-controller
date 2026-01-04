@@ -18,7 +18,7 @@ use std::{sync::Arc, time::Duration};
 use tracing::{debug, info};
 
 pub async fn cleanup(instance: Arc<ChallengeInstance>, ctx: Arc<Context>) -> Result<Action> {
-    info!("Cleaning up ChallengeInstance {}", instance.name_any());
+    debug!("Cleaning up ChallengeInstance {}", instance.name_any());
 
     let namespace_name = if let Some(ref status) = instance.status {
         if let Some(ref ns) = status.namespace {
@@ -66,12 +66,21 @@ pub async fn cleanup(instance: Arc<ChallengeInstance>, ctx: Arc<Context>) -> Res
     let namespaces: Api<Namespace> = Api::all(ctx.client.clone());
 
     match namespaces.get(&namespace_name).await {
-        Ok(_) => {
-            info!("Deleting namespace {}", namespace_name);
-            namespaces
-                .delete(&namespace_name, &DeleteParams::default())
-                .await?;
-            return Ok(Action::requeue(Duration::from_secs(2)));
+        Ok(namespace) => {
+            if !namespace
+                .status
+                .and_then(|s| s.phase)
+                .map(|phase| phase == "Terminating")
+                .unwrap_or_default()
+            {
+                namespaces
+                    .delete(&namespace_name, &DeleteParams::default())
+                    .await?;
+                info!("Deleted namespace {}", namespace_name);
+                return Ok(Action::requeue(Duration::from_secs(2)));
+            } else {
+                debug!("Namespace {} already terminating", namespace_name);
+            }
         }
         Err(kube::Error::Api(ae)) if ae.code == 404 => {
             debug!("Namespace {} already deleted", namespace_name);

@@ -145,7 +145,12 @@ fn make_svc(
                 ports
                     .iter()
                     .map(|p| ServicePort {
-                        name: p.name.to_owned(),
+                        name: Some(
+                            p.name
+                                .to_owned()
+                                .unwrap_or(format!("{}-{}", hostname, p.port))
+                                .to_owned(),
+                        ),
                         port: p.port as i32,
                         protocol: Some(p.protocol.to_uppercase()),
                         ..Default::default()

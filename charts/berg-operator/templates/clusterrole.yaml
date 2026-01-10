@@ -31,15 +31,17 @@ rules:
   # we only want to create or delete namespaces, never update
   # this should be used in combination with kyverno rules
   # and the namespace scoped role
+  {{- if .Values.hardened }}
   - apiGroups: [""]
     resources: ["namespaces"]
     verbs: ["get", "list", "watch", "create", "delete"]
-
+  {{- else }}
   # if running unhardened
   # Namespace management
   - apiGroups: [""]
     resources: ["namespaces"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  {{- end }}
 
   # Core resources
   - apiGroups: [""]

@@ -2,7 +2,8 @@
 
 replicaCount: 1
 
-# hardened deployment. enables kyverno policies and uses rbac manager, disables cluster wide access for berg challenge instance controller.
+# hardened deployment. enables kyverno policies and uses rbac manager
+# disables cluster wide access for berg challenge instance controller.
 hardened: false
 
 image:
@@ -17,9 +18,7 @@ fullnameOverride: ""
 # Create a default ChallengeInstanceClass
 createInstanceClass: true
 
-# Controller configuration (simplified)
 config:
-  # Namespace where Challenge CRs are stored (fallback)
   challengeNamespace: berg
 
 # Gateway configuration (used by ChallengeInstanceClass)

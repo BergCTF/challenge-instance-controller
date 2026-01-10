@@ -39,8 +39,6 @@ spec:
           value: {{ .Values.logLevel }}
         - name: DEFAULT_INSTANCE_CLASS
           value: {{ .Values.instanceClass.name | quote }}
-        - name: CHALLENGE_NAMESPACE
-          value: {{ .Values.config.challengeNamespace | quote }}
         - name: DEFAULT_TIMEOUT
           value: {{ .Values.instanceClass.defaultTimeout | quote }}
         resources:

@@ -1,4 +1,4 @@
-{{- if .Values.createInstanceClass }}
+{{- if .Values.instanceClass.create }}
 apiVersion: berg.norelect.ch/v1
 kind: ChallengeInstanceClass
 metadata:
@@ -6,13 +6,13 @@ metadata:
 spec:
   default: {{ .Values.instanceClass.default }}
   gateway:
-    name: {{ .Values.gateway.name }}
-    namespace: {{ .Values.gateway.namespace }}
-    httpListenerName: {{ .Values.gateway.httpListenerName }}
-    tlsListenerName: {{ .Values.gateway.tlsListenerName }}
-    domain: {{ .Values.gateway.domain }}
-    httpPort: {{ .Values.gateway.httpPort }}
-    tlsPort: {{ .Values.gateway.tlsPort }}
+    name: {{ .Values.instanceClass.gateway.name }}
+    namespace: {{ .Values.instanceClass.gateway.namespace }}
+    httpListenerName: {{ .Values.instanceClass.gateway.httpListenerName }}
+    tlsListenerName: {{ .Values.instanceClass.gateway.tlsListenerName }}
+    domain: {{ .Values.instanceClass.gateway.domain }}
+    httpPort: {{ .Values.instanceClass.gateway.httpPort }}
+    tlsPort: {{ .Values.instanceClass.gateway.tlsPort }}
   {{- if .Values.instanceClass.defaultResources }}
   defaultResources:
     cpuRequest: {{ .Values.instanceClass.defaultResources.cpuRequest }}

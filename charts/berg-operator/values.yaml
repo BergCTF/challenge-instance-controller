@@ -15,27 +15,21 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
-# Create a default ChallengeInstanceClass
-createInstanceClass: true
-
-config:
-  challengeNamespace: berg
-
-# Gateway configuration (used by ChallengeInstanceClass)
-gateway:
-  name: "berg-gateway"
-  namespace: "berg-system"
-  httpListenerName: "http"
-  tlsListenerName: "tls"
-  domain: "challenges.example.com"
-  httpPort: 80
-  tlsPort: 443
-
-# ChallengeInstanceClass configuration
 instanceClass:
+  create: true
   name: default
+  # domain: ""
   default: true
   defaultTimeout: "2h"
+
+  gateway:
+    name: "berg-gateway"
+    namespace: "berg"
+    httpListenerName: "https-chall"
+    tlsListenerName: "tls-chall"
+    domain: "chall.berg.io"
+    httpPort: 1337
+    tlsPort: 31337
 
   # Resource defaults for challenge instances
   defaultResources:
@@ -52,7 +46,7 @@ instanceClass:
 
   # Image pull configuration
   imagePull:
-    policy: "IfNotPresent"
+    policy: "Always"
     # secretName: ""
 
   # Security configuration

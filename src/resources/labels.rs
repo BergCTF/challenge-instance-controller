@@ -1,3 +1,5 @@
+use kube::ResourceExt;
+
 use crate::{
     crds::{Challenge, ChallengeInstance, ContainerSpec},
     reconciler::Context,
@@ -38,7 +40,7 @@ pub fn common_labels(
 }
 
 /// Generate labels for namespace
-pub fn namespace_labels(instance: &ChallengeInstance, ctx: &Context) -> BTreeMap<String, String> {
+pub fn namespace_labels(instance: &ChallengeInstance, _ctx: &Context) -> BTreeMap<String, String> {
     let mut labels = BTreeMap::new();
     labels.insert(
         "app.kubernetes.io/managed-by".to_string(),
@@ -59,7 +61,7 @@ pub fn namespace_labels(instance: &ChallengeInstance, ctx: &Context) -> BTreeMap
             .challenge_ref
             .namespace
             .clone()
-            .unwrap_or_else(|| ctx.config.challenge_namespace.clone()),
+            .unwrap_or_else(|| instance.namespace().unwrap().to_string()),
     );
     labels.insert(
         "berg.norelect.ch/owner-id".to_string(),

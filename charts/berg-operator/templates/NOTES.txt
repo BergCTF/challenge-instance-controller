@@ -5,9 +5,8 @@ Your release is named {{ .Release.Name }}.
 The Berg Challenge Instance Controller has been deployed to namespace {{ .Release.Namespace }}.
 
 Configuration:
-  - Challenge Namespace: {{ .Values.config.challengeNamespace }}
-  - Challenge Domain: {{ .Values.config.challengeDomain }}
-  - Default Timeout: {{ .Values.config.defaultTimeout }}
+  - Challenge Domain: {{ .Values.instanceClass.gateway.domain}}
+  - Default Timeout: {{ .Values.instanceClass.defaultTimeout }}
 
 To verify the deployment:
 
@@ -21,7 +20,6 @@ To create a ChallengeInstance:
   kind: ChallengeInstance
   metadata:
     name: example-instance
-    namespace: {{ .Values.config.challengeNamespace }}
   spec:
     challengeRef:
       name: <challenge-name>

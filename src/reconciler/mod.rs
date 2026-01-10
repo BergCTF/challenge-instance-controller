@@ -91,12 +91,13 @@ pub async fn reconcile(instance: Arc<ChallengeInstance>, ctx: Arc<Context>) -> R
 }
 
 async fn fetch_challenge(instance: &ChallengeInstance, ctx: &Context) -> Result<Challenge> {
+    let instance_ns = instance.namespace().unwrap().to_string();
     let challenge_ns = instance
         .spec
         .challenge_ref
         .namespace
         .as_deref()
-        .unwrap_or(&ctx.config.challenge_namespace);
+        .unwrap_or(&instance_ns);
 
     let challenges: Api<Challenge> = Api::namespaced(ctx.client.clone(), challenge_ns);
 

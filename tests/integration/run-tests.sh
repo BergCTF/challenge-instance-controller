@@ -75,7 +75,7 @@ test_operator_deployment() {
     # Deploy operator using helm
     if helm upgrade --install berg-operator "$SCRIPT_DIR/../../charts/berg-operator" \
         --namespace "$TEST_NS" \
-        --set image.repository=berg-operator \
+        --set image.repository=berg-controller \
         --set image.tag=test \
         --set image.pullPolicy=IfNotPresent \
         --set config.challengeNamespace="$TEST_NS" \

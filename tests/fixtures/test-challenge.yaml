@@ -7,6 +7,10 @@ spec:
   displayName: "Test Web Challenge"
   description: "A simple test challenge for integration testing"
   difficulty: easy
+  author: berg
+  categories: ["test"]
+  flag: "myflag{test}"
+  flagFormat: "myflag{...}"
   allowOutboundTraffic: false
   containers:
     - hostname: web
@@ -14,6 +18,7 @@ spec:
       ports:
         - name: http
           port: 80
+          protocol: http
           type: internalPort
       resourceRequests:
         cpu: "100m"

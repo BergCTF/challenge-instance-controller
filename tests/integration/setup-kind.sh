@@ -45,11 +45,11 @@ echo "==> Installing test ChallengeInstanceClass..."
 kubectl apply -f "$SCRIPT_DIR/../fixtures/test-instance-class.yaml"
 
 # Load operator image if it exists
-if docker images berg-operator:test | grep -q berg-operator; then
-    echo "==> Loading operator image into kind..."
-    kind load docker-image berg-operator:test --name "$CLUSTER_NAME"
+if docker images berg-controller:test | grep -q berg-controller; then
+    echo "==> Loading controller image into kind..."
+    kind load docker-image berg-controller:test --name "$CLUSTER_NAME"
 else
-    echo "==> Warning: berg-operator:test image not found, will need to build"
+    echo "==> Warning: berg-controller:test image not found, will need to build"
 fi
 
 echo ""

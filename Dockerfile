@@ -11,7 +11,8 @@ RUN cargo chef prepare --recipe-path recipe.json
 FROM chef AS builder 
 COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
-COPY . .
+COPY Cargo.toml Cargo.lock .
+COPY src/ src/
 RUN cargo build --release --bin berg-controller
 
 # runtime env

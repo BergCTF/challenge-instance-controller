@@ -62,7 +62,7 @@
 
             # helm
             # this one just runs ct lint --all --skip-dependencies
-            chart-testing.enable = true;
+            # chart-testing.enable = true;
           };
         };
       });

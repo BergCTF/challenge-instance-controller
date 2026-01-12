@@ -72,5 +72,5 @@ jobs:
 
       - name: Run integration tests
         run: |
-          sh ./tests/integration.sh
+          bash ./tests/integration.sh
 

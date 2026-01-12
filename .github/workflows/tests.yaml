@@ -7,20 +7,6 @@ on:
 
 jobs:
 
-  pre-commit:
-    name: Run pre-commit checks
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@nightly
-        with:
-          components: clippy, rustfmt
-
-      - name: Run pre-commit
-        uses: pre-commit/action@v3.0.1
-
   lint-and-test:
     name: Lint and test
     runs-on: ubuntu-latest

@@ -16,7 +16,7 @@ COPY src/ src/
 RUN cargo build --release --bin berg-controller
 
 # runtime env
-FROM gcr.io/distroless/cc-debian12 AS runtime
+FROM debian:trixie-slim AS runtime
 WORKDIR /app
-COPY --from=builder /app/target/release/berg-controller /usr/local/bin
+COPY --from=builder /app/target/release/berg-controller /usr/local/bin/berg-controller
 ENTRYPOINT ["/usr/local/bin/berg-controller"]

@@ -73,7 +73,7 @@ test_operator_deployment() {
     log_info "Test 1: Deploying operator..."
 
     # Deploy operator using helm
-    if helm upgrade --install berg-operator "$SCRIPT_DIR/../../charts/berg-operator" \
+    if helm upgrade --install berg-controller "$SCRIPT_DIR/../../charts/berg-operator" \
         --namespace "$TEST_NS" \
         --set image.repository=berg-controller \
         --set image.tag=test \
@@ -90,11 +90,11 @@ test_operator_deployment() {
     fi
 
     # Wait for operator pod to be ready
-    if wait_for_condition "pod -l app.kubernetes.io/name=berg-operator" "condition=Ready"; then
+    if wait_for_condition "pod -lapp.kubernetes.io/name=berg-controller" "condition=Ready"; then
         pass_test "Operator pod is ready"
     else
         fail_test "Operator pod failed to become ready"
-        kubectl logs -l app.kubernetes.io/name=berg-operator -n "$TEST_NS" --tail=50 || true
+        kubectl logs -l app.kubernetes.io/name=berg-controller -n "$TEST_NS" --tail=50 || true
         return 1
     fi
 }

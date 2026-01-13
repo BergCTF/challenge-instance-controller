@@ -84,6 +84,8 @@ test_operator_deployment() {
         pass_test "Operator deployed successfully"
     else
         fail_test "Failed to deploy operator"
+        kubectl describe deploy -n $TEST_NS
+        kubectl describe pods -n $TEST_NS
         return 1
     fi
 

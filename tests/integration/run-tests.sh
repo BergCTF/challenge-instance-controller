@@ -50,6 +50,7 @@ wait_for_condition() {
         return 0
     else
         log_error "Timeout waiting for $resource condition: $condition"
+        kubectl get -n "$namespace" "$resource"
         return 1
     fi
 }

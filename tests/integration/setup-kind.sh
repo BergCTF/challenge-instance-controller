@@ -47,7 +47,7 @@ hubble:
   enabled: false
 EOF
 
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
+kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
 
 # Wait for cluster to be ready
 echo "==> Waiting for cluster to be ready..."

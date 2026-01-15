@@ -1,14 +1,14 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "berg-operator.name" -}}
+{{- define "berg-controller.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Create a default fully qualified app name.
 */}}
-{{- define "berg-operator.fullname" -}}
+{{- define "berg-controller.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -24,16 +24,16 @@ Create a default fully qualified app name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "berg-operator.chart" -}}
+{{- define "berg-controller.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "berg-operator.labels" -}}
-helm.sh/chart: {{ include "berg-operator.chart" . }}
-{{ include "berg-operator.selectorLabels" . }}
+{{- define "berg-controller.labels" -}}
+helm.sh/chart: {{ include "berg-controller.chart" . }}
+{{ include "berg-controller.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -43,17 +43,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "berg-operator.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "berg-operator.name" . }}
+{{- define "berg-controller.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "berg-controller.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "berg-operator.serviceAccountName" -}}
+{{- define "berg-controller.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "berg-operator.fullname" .) .Values.serviceAccount.name }}
+{{- default (include "berg-controller.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
@@ -62,6 +62,6 @@ Create the name of the service account to use
 {{/*
 Image tag
 */}}
-{{- define "berg-operator.imageTag" -}}
+{{- define "berg-controller.imageTag" -}}
 {{- .Values.image.tag | default .Chart.AppVersion }}
 {{- end }}

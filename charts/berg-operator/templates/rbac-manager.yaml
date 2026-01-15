@@ -8,7 +8,7 @@ rbacBindings:
   - name: berg-controller-access
     subjects:
       - kind: ServiceAccount
-        name: {{ include "berg-operator.serviceAccountName" . }}
+        name: {{ include "berg-controller.serviceAccountName" . }}
         namespace: {{ .Release.Namespace }}
     roleBindings:
       - clusterRole: edit

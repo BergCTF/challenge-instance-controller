@@ -10,8 +10,8 @@ Configuration:
 
 To verify the deployment:
 
-  kubectl get deployment {{ include "berg-operator.fullname" . }} -n {{ .Release.Namespace }}
-  kubectl logs -l app.kubernetes.io/name={{ include "berg-operator.name" . }} -n {{ .Release.Namespace }}
+  kubectl get deployment {{ include "berg-controller.fullname" . }} -n {{ .Release.Namespace }}
+  kubectl logs -l app.kubernetes.io/name={{ include "berg-controller.name" . }} -n {{ .Release.Namespace }}
 
 To create a ChallengeInstance:
 
@@ -28,4 +28,4 @@ To create a ChallengeInstance:
     timeout: 2h
   EOF
 
-For more information, visit: https://github.com/norelect/berg-operator
+For more information, visit: https://github.com/norelect/berg-controller

@@ -1,6 +1,6 @@
 function collect_logs() {
   echo "==> Operator logs:"
-  kubectl logs -l app.kubernetes.io/name=berg-operator -n berg-test --tail=200 || true
+  kubectl logs -l app.kubernetes.io/name=berg-controller -n berg-test --tail=200 || true
   echo ""
   echo "==> ChallengeInstance status:"
   kubectl get challengeinstance -n berg-test -o yaml || true

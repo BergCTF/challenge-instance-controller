@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CLUSTER_NAME="${CLUSTER_NAME:-berg-operator-test}"
+CLUSTER_NAME="${CLUSTER_NAME:-berg-controller-test}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "==> Setting up kind cluster: $CLUSTER_NAME"
@@ -58,6 +58,6 @@ echo "    Cluster name: $CLUSTER_NAME"
 echo "    kubectl context: kind-$CLUSTER_NAME"
 echo ""
 echo "Next steps:"
-echo "  1. Build operator image: docker build -t berg-operator:test ."
-echo "  2. Load image: kind load docker-image berg-operator:test --name $CLUSTER_NAME"
+echo "  1. Build operator image: docker build -t berg-controller:test ."
+echo "  2. Load image: kind load docker-image berg-controller:test --name $CLUSTER_NAME"
 echo "  3. Run tests: ./tests/integration/run-tests.sh"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CLUSTER_NAME="${CLUSTER_NAME:-berg-operator-test}"
+CLUSTER_NAME="${CLUSTER_NAME:-berg-controller-test}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FIXTURES_DIR="$SCRIPT_DIR/../fixtures"
 TEST_NS="berg-test"
@@ -73,7 +73,7 @@ test_operator_deployment() {
     log_info "Test 1: Deploying operator..."
 
     # Deploy operator using helm
-    if helm upgrade --install berg-controller "$SCRIPT_DIR/../../charts/berg-operator" \
+    if helm upgrade --install berg-controller "$SCRIPT_DIR/../../charts/berg-controller" \
         --namespace "$TEST_NS" \
         --set image.repository=berg-controller \
         --set image.tag=test \

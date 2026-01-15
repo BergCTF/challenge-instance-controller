@@ -18,7 +18,7 @@ spec:
                 - CREATE
             subjects:
               - kind: ServiceAccount
-                name: {{ include "berg-operator.serviceAccountName" . }}
+                name: {{ include "berg-controller.serviceAccountName" . }}
                 namespace: {{ .Release.Namespace }}
       validate:
         message: "name should start with '{{ .Values.namespacePrefix }}-'"
@@ -35,7 +35,7 @@ spec:
                 - DELETE
             subjects:
               - kind: ServiceAccount
-                name: {{ include "berg-operator.serviceAccountName" . }}
+                name: {{ include "berg-controller.serviceAccountName" . }}
                 namespace: {{ .Release.Namespace }}
       validate:
         message: "Deleting unmanaged namespaces is not allowed"
@@ -44,5 +44,5 @@ spec:
             any:
               - key: '{{ "{{" }} request.oldObject.metadata.labels.managed-by {{ "}}" }}'
                 operator: NotEquals
-                value: berg-controller-{{ include "berg-operator.fullname" . }}
+                value: berg-controller-{{ include "berg-controller.fullname" . }}
 {{- end }}

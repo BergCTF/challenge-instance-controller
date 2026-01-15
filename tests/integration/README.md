@@ -23,7 +23,7 @@ nix develop
 
 ```bash
 # 1. Build the operator image
-docker build -t berg-operator:test .
+docker build -t berg-controller:test .
 
 # 2. Set up kind cluster
 ./tests/integration/setup-kind.sh
@@ -65,7 +65,7 @@ The integration test suite covers:
 
 ## Environment Variables
 
-- `CLUSTER_NAME` - Name of kind cluster (default: `berg-operator-test`)
+- `CLUSTER_NAME` - Name of kind cluster (default: `berg-controller-test`)
 
 Example:
 ```bash
@@ -76,7 +76,7 @@ CLUSTER_NAME=my-test-cluster ./tests/integration/setup-kind.sh
 
 ### View operator logs
 ```bash
-kubectl logs -l app.kubernetes.io/name=berg-operator -n berg-test --tail=100
+kubectl logs -l app.kubernetes.io/name=berg-controller -n berg-test --tail=100
 ```
 
 ### Inspect ChallengeInstance
@@ -111,7 +111,7 @@ The integration tests are designed to run in CI environments:
 # Example GitHub Actions workflow
 - name: Run integration tests
   run: |
-    docker build -t berg-operator:test .
+    docker build -t berg-controller:test .
     ./tests/integration/setup-kind.sh
     ./tests/integration/run-tests.sh
     ./tests/integration/teardown-kind.sh
@@ -152,4 +152,4 @@ main() {
 - Each test run performs cleanup before starting
 - Failed tests don't stop execution (allowing full test suite to run)
 - Challenge namespaces are prefixed with `challenge-` followed by owner ID
-- The operator must be built and tagged as `berg-operator:test` before running tests
+- The operator must be built and tagged as `berg-controller:test` before running tests

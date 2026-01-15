@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CLUSTER_NAME="${CLUSTER_NAME:-berg-operator-test}"
+CLUSTER_NAME="${CLUSTER_NAME:-berg-controller-test}"
 
 echo "==> Tearing down kind cluster: $CLUSTER_NAME"
 

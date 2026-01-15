@@ -1,4 +1,4 @@
-/// Utility functions for the berg-operator
+/// Utility functions for the berg-controller
 /// Generate a namespace name from an owner ID
 pub fn generate_namespace_name(namespace_prefix: &str, challenge_name: &str, id: &str) -> String {
     let max_chall_name_len = 63 - (namespace_prefix.len() + id.len() + 2);

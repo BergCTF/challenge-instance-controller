@@ -1,4 +1,4 @@
-# Default values for berg-operator
+# Default values for berg-controller
 
 replicaCount: 1
 

@@ -30,8 +30,11 @@ nodes:
     protocol: TCP
 EOF
 
+helm repo add cilium https://helm.cilium.io/
+helm repo update
+
 echo "Installing cilium"
-cat <<EOF | helm --kube-context kind-berg-dev-cluster install --wait cilium cilium/cilium -n cilium --version 1.17.4 --create-namespace -f -
+cat <<EOF | helm install --wait cilium cilium/cilium -n cilium --version 1.17.4 --create-namespace -f -
 ipam:
   mode: kubernetes
 image:
@@ -41,22 +44,7 @@ operator:
 bandwidthManager:
   enabled: true
 hubble:
-  enabled: true
-  relay:
-    enabled: true
-  ui:
-    enabled: true
-    ingress:
-      enabled: true
-      annotations:
-        cert-manager.io/cluster-issuer: mkcert
-      className: traefik
-      hosts:
-        - hubble.localhost
-      tls:
-        - secretName: hubble-tls
-          hosts:
-            - hubble.localhost
+  enabled: false
 EOF
 
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml

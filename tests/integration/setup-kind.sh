@@ -17,6 +17,8 @@ echo "==> Creating kind cluster..."
 cat <<EOF | kind create cluster --name "$CLUSTER_NAME" --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  disableDefaultCNI: true
 nodes:
 - role: control-plane
   extraPortMappings:
@@ -27,6 +29,37 @@ nodes:
     hostPort: 30443
     protocol: TCP
 EOF
+
+echo "Installing cilium"
+cat <<EOF | helm --kube-context kind-berg-dev-cluster install --wait cilium cilium/cilium -n cilium --version 1.17.4 --create-namespace -f -
+ipam:
+  mode: kubernetes
+image:
+  pullPolicy: IfNotPresent
+operator:
+  replicas: 1
+bandwidthManager:
+  enabled: true
+hubble:
+  enabled: true
+  relay:
+    enabled: true
+  ui:
+    enabled: true
+    ingress:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: mkcert
+      className: traefik
+      hosts:
+        - hubble.localhost
+      tls:
+        - secretName: hubble-tls
+          hosts:
+            - hubble.localhost
+EOF
+
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
 
 # Wait for cluster to be ready
 echo "==> Waiting for cluster to be ready..."

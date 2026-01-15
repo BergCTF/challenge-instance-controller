@@ -39,22 +39,6 @@ fail_test() {
     ((TESTS_FAILED++))
 }
 
-wait_for_condition() {
-    local resource=$1
-    local condition=$2
-    local timeout=${3:-60}
-    local namespace=${4:-$TEST_NS}
-
-    log_info "Waiting for $resource to meet condition: $condition (timeout: ${timeout}s)"
-    if kubectl wait --for="$condition" "$resource" -n "$namespace" --timeout="${timeout}s" 2>&1; then
-        return 0
-    else
-        log_error "Timeout waiting for $resource condition: $condition"
-        kubectl get -n "$namespace" "$resource"
-        return 1
-    fi
-}
-
 cleanup_test_resources() {
     log_info "Cleaning up test resources..."
     kubectl delete challengeinstance --all -n "$TEST_NS" --ignore-not-found=true --wait=false
@@ -91,7 +75,7 @@ test_operator_deployment() {
     fi
 
     # Wait for operator pod to be ready
-    if wait_for_condition "pod -lapp.kubernetes.io/name=berg-controller" "condition=Ready"; then
+    if kubectl wait --for=condition=Read pod -lapp.kubernetes.io/name=berg-controller -n $TEST_NS --timeout 60s; then
         pass_test "Operator pod is ready"
     else
         fail_test "Operator pod failed to become ready"
@@ -246,7 +230,7 @@ test_pod_status() {
     fi
 
     # Wait for pod to be ready
-    if wait_for_condition "pod -l berg.norelect.ch/container=web" "condition=Ready" 120 "$challenge_ns"; then
+    if kubectl wait --for=condition=Read pod -l berg.norelect.ch/container=web -n $challenge_ns --timeout 120s; then
         pass_test "Pod is ready"
     else
         fail_test "Pod failed to become ready"

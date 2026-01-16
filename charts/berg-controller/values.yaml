@@ -1,0 +1,117 @@
+# Default values for berg-controller
+
+replicaCount: 1
+
+# hardened deployment. enables kyverno policies and uses rbac manager
+# disables cluster wide access for berg challenge instance controller.
+hardened: false
+
+image:
+  repository: ghcr.io/cfi2017/berg-challenge-instance-controller
+  pullPolicy: IfNotPresent
+  tag: ""  # Defaults to chart appVersion
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+instanceClass:
+  create: true
+  name: default
+  # domain: ""
+  default: true
+  defaultTimeout: "2h"
+
+  gateway:
+    name: "berg-gateway"
+    namespace: "berg"
+    httpListenerName: "https-chall"
+    tlsListenerName: "tls-chall"
+    domain: "chall.berg.io"
+    httpPort: 1337
+    tlsPort: 31337
+
+  # Resource defaults for challenge instances
+  defaultResources:
+    cpuRequest: "100m"
+    cpuLimit: "1000m"
+    memoryRequest: "128Mi"
+    memoryLimit: "512Mi"
+
+  # Network configuration
+  network:
+    egressBandwidth: "10M"
+    ingressBandwidth: "10M"
+    additionalHeadlessService: false
+
+  # Image pull configuration
+  imagePull:
+    policy: "Always"
+    # secretName: ""
+
+  # Security configuration
+  # security:
+  #   runtimeClassName: "gvisor"
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  name: ""
+
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: true
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  fsGroup: 65532
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Liveness probe configuration
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+  initialDelaySeconds: 15
+  periodSeconds: 20
+
+# Readiness probe configuration
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Logging configuration
+logLevel: info
+logFormat: json

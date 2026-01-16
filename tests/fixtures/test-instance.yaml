@@ -1,0 +1,12 @@
+apiVersion: berg.norelect.ch/v1
+kind: ChallengeInstance
+metadata:
+  name: test-instance
+  namespace: berg-test
+spec:
+  challengeRef:
+    name: test-web-challenge
+    namespace: berg-test
+  ownerId: "12345678-1234-1234-1234-123456789012"
+  flag: "flag{test_integration_flag}"
+  timeout: "1h"

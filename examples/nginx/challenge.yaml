@@ -1,0 +1,24 @@
+apiVersion: berg.norelect.ch/v1
+kind: Challenge
+metadata:
+  name: nginx
+  namespace: berg
+spec:
+  allowOutboundTraffic: false
+  attachments: []
+  author: cfi2017
+  categories: ["rev"]
+  containers:
+    - hostname: nginx
+      image: nginx:alpine
+      ports:
+        - port: 80
+          name: nginx
+          protocol: tcp
+          appProtocol: http
+          type: publicHttpRoute
+  description: "Example NGINX challenge"
+  difficulty: baby
+  displayName: nginx
+  flag: flag{asdf}
+  flagFormat: flag{...}

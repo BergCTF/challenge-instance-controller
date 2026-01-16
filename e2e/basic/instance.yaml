@@ -1,0 +1,11 @@
+apiVersion: berg.norelect.ch/v1
+kind: ChallengeInstance
+metadata:
+  name: e2e-test-basic
+spec:
+  flag: flag{asdf-uwu}
+  challengeRef:
+    name: e2e-test-basic
+    namespace: ($namespace)
+  ownerId: a961d799-7905-484f-b7eb-b4f0fbcf7895
+  timeout: "2h"

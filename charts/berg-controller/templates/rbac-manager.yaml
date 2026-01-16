@@ -1,0 +1,18 @@
+# rbac manager configuration applying the appropriate roles to every challenge namespace
+{{- if .Values.hardened }}
+apiVersion: rbacmanager.reactiveops.io/v1beta1
+kind: RBACDefinition
+metadata:
+  name: berg-controller-access
+rbacBindings:
+  - name: berg-controller-access
+    subjects:
+      - kind: ServiceAccount
+        name: {{ include "berg-controller.serviceAccountName" . }}
+        namespace: {{ .Release.Namespace }}
+    roleBindings:
+      - clusterRole: edit
+        namespaceSelector:
+          matchLabels:
+            managed-by: berg-controller
+{{- end }}

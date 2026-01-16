@@ -1,14 +1,9 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub mod config;
+pub mod crds;
+pub mod date_time;
+pub mod error;
+pub mod flag;
+pub mod reconciler;
+pub mod resources;
+pub mod telemetry;
+pub mod utils;

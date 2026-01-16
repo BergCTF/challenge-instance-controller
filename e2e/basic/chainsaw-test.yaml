@@ -1,0 +1,90 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: basic
+spec:
+  steps:
+  - try:
+    - apply:
+        file: challenge.yaml
+    - apply:
+        file: instance.yaml
+    - assert:
+        resource:
+          apiVersion: berg.norelect.ch/v1
+          kind: ChallengeInstance
+          metadata:
+            name: e2e-test-basic
+          status:
+            phase: Running
+    - assert:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ci-e2e-test-basic-a961d799-7905-484f-b7eb-b4f0fbcf7895
+    - assert:
+        resource:
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: nginx
+            namespace: ci-e2e-test-basic-a961d799-7905-484f-b7eb-b4f0fbcf7895
+    - assert:
+        resource:
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            namespace: ci-e2e-test-basic-a961d799-7905-484f-b7eb-b4f0fbcf7895
+            labels:
+              app.kubernetes.io/component: challenge-pod
+              berg.norelect.ch/container: nginx
+              berg.norelect.ch/owner-id: a961d799-7905-484f-b7eb-b4f0fbcf7895
+              berg.norelect.ch/challenge: e2e-test-basic
+              app.kubernetes.io/managed-by: berg
+          status:
+            phase: Running
+    - assert:
+        resource:
+          apiVersion: v1
+          kind: Service
+          metadata:
+            namespace: ci-e2e-test-basic-a961d799-7905-484f-b7eb-b4f0fbcf7895
+            name: nginx
+          spec:
+            type: ClusterIP
+            ports:
+              - name: nginx
+                port: 80
+                protocol: TCP
+                targetPort: 80
+    - assert:
+        resource:
+          apiVersion: gateway.networking.k8s.io/v1
+          kind: HTTPRoute
+          metadata:
+            namespace: ci-e2e-test-basic-a961d799-7905-484f-b7eb-b4f0fbcf7895
+            name: nginx-80
+          spec:
+            rules:
+              - backendRefs:
+                  - kind: Service
+                    name: nginx
+                    port: 80
+                matches:
+                  - path:
+                      type: PathPrefix
+                      value: /
+          status:
+            parents:
+              - conditions:
+                  - message: Successfully accepted Route
+                    reason: Accepted
+                    status: "True"
+                    type: Accepted
+                  - message: Successfully resolved all references
+                    reason: ResolvedRefs
+                    status: "True"
+                    type: ResolvedRefs
+  - catch:
+      - events: {}

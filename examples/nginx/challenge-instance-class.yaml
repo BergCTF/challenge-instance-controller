@@ -1,0 +1,12 @@
+apiVersion: berg.norelect.ch/v1
+kind: ChallengeInstanceClass
+metadata:
+  name: default
+spec:
+  default: true
+  gateway: 
+    name: traefik-gateway
+    namespace: traefik
+    tlsListenerName: tls-chall
+    httpListenerName: https-chall
+    domain: berg.localhost

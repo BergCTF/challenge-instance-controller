@@ -1,0 +1,31 @@
+apiVersion: berg.norelect.ch/v1
+kind: Challenge
+metadata:
+  name: test-web-challenge
+  namespace: berg-test
+spec:
+  displayName: "Test Web Challenge"
+  description: "A simple test challenge for integration testing"
+  difficulty: easy
+  author: berg
+  categories: ["test"]
+  flag: "myflag{test}"
+  flagFormat: "myflag{...}"
+  allowOutboundTraffic: false
+  containers:
+    - hostname: web
+      image: nginx:alpine
+      ports:
+        - name: http
+          port: 80
+          protocol: http
+          type: internalPort
+      resourceRequests:
+        cpu: "100m"
+        memory: "64Mi"
+      resourceLimits:
+        cpu: "200m"
+        memory: "128Mi"
+      dynamicFlag:
+        content:
+          path: "/usr/share/nginx/html/flag.txt"

@@ -1,0 +1,75 @@
+{{- if .Values.rbac.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "berg-controller.fullname" . }}
+  labels:
+    {{- include "berg-controller.labels" . | nindent 4 }}
+rules:
+  # ChallengeInstance management
+  - apiGroups: ["berg.norelect.ch"]
+    resources: ["challengeinstances"]
+    verbs: ["get", "list", "watch", "update", "patch", "delete"]
+  - apiGroups: ["berg.norelect.ch"]
+    resources: ["challengeinstances/status"]
+    verbs: ["get", "update", "patch"]
+  - apiGroups: ["berg.norelect.ch"]
+    resources: ["challengeinstances/finalizers"]
+    verbs: ["update"]
+
+  # Challenge read access
+  - apiGroups: ["berg.norelect.ch"]
+    resources: ["challenges"]
+    verbs: ["get", "list", "watch"]
+
+  # ChallengeInstanceClass read access
+  - apiGroups: ["berg.norelect.ch"]
+    resources: ["challengeinstanceclasses"]
+    verbs: ["get", "list", "watch"]
+
+  # if running hardened
+  # we only want to create or delete namespaces, never update
+  # this should be used in combination with kyverno rules
+  # and the namespace scoped role
+  {{- if .Values.hardened }}
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  {{- else }}
+  # if running unhardened
+  # Namespace management
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  {{- end }}
+
+  # Core resources
+  - apiGroups: [""]
+    resources: ["services", "configmaps", "secrets", "pods"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # Deployments
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # PodDisruptionBudgets
+  - apiGroups: ["policy"]
+    resources: ["poddisruptionbudgets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # Gateway API
+  - apiGroups: ["gateway.networking.k8s.io"]
+    resources: ["httproutes", "tlsroutes"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # Cilium
+  - apiGroups: ["cilium.io"]
+    resources: ["ciliumnetworkpolicies"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # Events
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+{{- end }}

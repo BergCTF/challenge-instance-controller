@@ -1,0 +1,48 @@
+# validating policy only allowing the operator to create/delete namespaces with the 
+# challenge prefix
+{{- if .Values.hardened }}
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: berg-controller-only-allow-managed-namespaces
+spec:
+  validationFailureAction: Audit
+  rules:
+    - name: verify-naming
+      match:
+        any:
+          - resources:
+              kinds:
+                - Namespace
+              operations:
+                - CREATE
+            subjects:
+              - kind: ServiceAccount
+                name: {{ include "berg-controller.serviceAccountName" . }}
+                namespace: {{ .Release.Namespace }}
+      validate:
+        message: "name should start with '{{ .Values.namespacePrefix }}-'"
+        pattern:
+          metadata:
+            name: "{{ .Values.namespacePrefix }}-*"
+    - name: validate-delete
+      match:
+        any:
+          - resources:
+              kinds:
+                - Namespace
+              operations:
+                - DELETE
+            subjects:
+              - kind: ServiceAccount
+                name: {{ include "berg-controller.serviceAccountName" . }}
+                namespace: {{ .Release.Namespace }}
+      validate:
+        message: "Deleting unmanaged namespaces is not allowed"
+        deny:
+          conditions:
+            any:
+              - key: '{{ "{{" }} request.oldObject.metadata.labels.managed-by {{ "}}" }}'
+                operator: NotEquals
+                value: berg-controller-{{ include "berg-controller.fullname" . }}
+{{- end }}

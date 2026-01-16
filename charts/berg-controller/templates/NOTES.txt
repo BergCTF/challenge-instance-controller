@@ -1,0 +1,31 @@
+Thank you for installing {{ .Chart.Name }}!
+
+Your release is named {{ .Release.Name }}.
+
+The Berg Challenge Instance Controller has been deployed to namespace {{ .Release.Namespace }}.
+
+Configuration:
+  - Challenge Domain: {{ .Values.instanceClass.gateway.domain}}
+  - Default Timeout: {{ .Values.instanceClass.defaultTimeout }}
+
+To verify the deployment:
+
+  kubectl get deployment {{ include "berg-controller.fullname" . }} -n {{ .Release.Namespace }}
+  kubectl logs -l app.kubernetes.io/name={{ include "berg-controller.name" . }} -n {{ .Release.Namespace }}
+
+To create a ChallengeInstance:
+
+  kubectl apply -f - <<EOF
+  apiVersion: berg.norelect.ch/v1
+  kind: ChallengeInstance
+  metadata:
+    name: example-instance
+  spec:
+    challengeRef:
+      name: <challenge-name>
+    ownerId: <uuid>
+    flag: flag{example}
+    timeout: 2h
+  EOF
+
+For more information, visit: https://github.com/norelect/berg-controller

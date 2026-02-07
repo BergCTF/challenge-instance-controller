@@ -4,14 +4,14 @@ WORKDIR /app
 
 # planning stage
 FROM chef AS planner
-COPY Cargo.toml Cargo.lock .
+COPY Cargo.toml Cargo.lock ./
 RUN cargo chef prepare --recipe-path recipe.json
 
 # building stage
 FROM chef AS builder 
 COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
-COPY Cargo.toml Cargo.lock .
+COPY Cargo.toml Cargo.lock ./
 COPY src/ src/
 RUN cargo build --release --bin berg-controller
 

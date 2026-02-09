@@ -136,8 +136,12 @@ pub async fn reconcile_creating(
 
         // PodDisruptionBudget
         resources::pdb::reconcile(&instance, container, &namespace_name, &ctx).await?;
+    }
 
-        // Deployment
+    // first create all services, then create deployments
+    // we inject service metadata information into deployments
+    // so we'll wanna wait until they're ready (eg nodeport services)
+    for container in &challenge.spec.containers {
         match resources::deployment::reconcile(
             &instance,
             &challenge,

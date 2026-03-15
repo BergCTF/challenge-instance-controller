@@ -168,7 +168,7 @@ fn build_deployment(
     }
 
     // Build resource requirements
-    let resources = build_resources(container_spec, class);
+    let resources: ResourceRequirements = build_resources(container_spec, class);
 
     // Build security context
     let security_context = build_security_context(container_spec);
@@ -372,6 +372,17 @@ fn build_resources(
     // we can probably improve this in the future.
     if memory_limit == default_memory_limit {
         requests.insert("memory".to_string(), Quantity(memory_request));
+    }
+
+    if container_spec.enable_kvm {
+        limits.insert(
+            "nfits.de/devices-kvm".to_string(),
+            Quantity("1".to_string()),
+        );
+        requests.insert(
+            "nfits.de/devices-kvm".to_string(),
+            Quantity("1".to_string()),
+        );
     }
 
     ResourceRequirements {

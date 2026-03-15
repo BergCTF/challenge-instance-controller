@@ -105,6 +105,9 @@ spec:
                     egressBandwidth:
                       nullable: true
                       type: string
+                    enableKvm:
+                      default: false
+                      type: boolean
                     environment:
                       additionalProperties:
                         type: string

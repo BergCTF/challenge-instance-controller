@@ -242,8 +242,8 @@ fn build_deployment(
             key: Some("dedicated".to_string()),
             value: Some("kvm".to_string()),
             effect: Some("NoSchedule".to_string()),
-            operator: Some("Exists".to_string()),
-            toleration_seconds: Some(6000),
+            operator: None,
+            toleration_seconds: None,
         }]);
 
         node_selector = Some(BTreeMap::from([("kvm".to_string(), "true".to_string())]));

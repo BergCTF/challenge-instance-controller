@@ -9,8 +9,8 @@ use k8s_openapi::{
     api::{
         apps::v1::{Deployment, DeploymentSpec},
         core::v1::{
-            Capabilities, Container, EnvVar, Pod, PodSpec, PodTemplateSpec, ResourceRequirements,
-            SecurityContext,
+            Capabilities, Container, EnvVar, NodeSelector, Pod, PodSpec, PodTemplateSpec,
+            ResourceRequirements, SecurityContext, Toleration,
         },
     },
     apimachinery::pkg::{api::resource::Quantity, apis::meta::v1::LabelSelector},
@@ -234,6 +234,21 @@ fn build_deployment(
         "false".to_string(),
     );
 
+    let mut tolerations = None;
+    let mut node_selector = None;
+
+    if container_spec.enable_kvm {
+        tolerations = Some(vec![Toleration {
+            key: Some("dedicated".to_string()),
+            value: Some("kvm".to_string()),
+            effect: Some("NoSchedule".to_string()),
+            operator: Some("Exists".to_string()),
+            toleration_seconds: Some(6000),
+        }]);
+
+        node_selector = Some(BTreeMap::from([("kvm".to_string(), "true".to_string())]));
+    }
+
     // Build pod template
     let pod_template = PodTemplateSpec {
         metadata: Some(kube::api::ObjectMeta {
@@ -246,6 +261,8 @@ fn build_deployment(
             ..Default::default()
         }),
         spec: Some(PodSpec {
+            node_selector: node_selector,
+            tolerations: tolerations,
             hostname: Some(container_name.clone()),
             containers: vec![container],
             volumes: if volumes.is_empty() {

@@ -354,42 +354,158 @@ fn build_resources(
         .unwrap_or_else(|| "128Mi".to_string());
 
     // CPU
-    let cpu_limit = container_spec
-        .resource_limits
-        .as_ref()
-        .and_then(|r| r.cpu.clone())
-        .unwrap_or(default_cpu_limit.to_owned());
-    let cpu_request = container_spec
-        .resource_requests
-        .as_ref()
-        .and_then(|r| r.cpu.clone())
-        .unwrap_or(default_cpu_request);
+
+    // if the user has set a limit, use that, otherwise use the default from the class
+    let cpu_limit = if container_spec.resource_limits.is_some()
+        && container_spec
+            .resource_limits
+            .as_ref()
+            .unwrap()
+            .cpu
+            .is_some()
+    {
+        debug!(
+            "Using user-defined CPU limit for container {}: {}",
+            container_spec.hostname,
+            container_spec
+                .resource_limits
+                .as_ref()
+                .unwrap()
+                .cpu
+                .as_ref()
+                .unwrap()
+        );
+        container_spec
+            .resource_limits
+            .as_ref()
+            .unwrap()
+            .cpu
+            .as_ref()
+            .unwrap()
+            .clone()
+    } else {
+        debug!(
+            "Using default CPU limit for container {}: {}",
+            container_spec.hostname, default_cpu_limit
+        );
+        default_cpu_limit.to_owned()
+    };
+
+    // if the user has set a request, use that, otherwise use the default from the class
+    let cpu_request = if container_spec.resource_requests.is_some()
+        && container_spec
+            .resource_requests
+            .as_ref()
+            .unwrap()
+            .cpu
+            .is_some()
+    {
+        debug!(
+            "Using user-defined CPU request for container {}: {}",
+            container_spec.hostname,
+            container_spec
+                .resource_requests
+                .as_ref()
+                .unwrap()
+                .cpu
+                .as_ref()
+                .unwrap()
+        );
+        container_spec
+            .resource_requests
+            .as_ref()
+            .unwrap()
+            .cpu
+            .as_ref()
+            .unwrap()
+            .clone()
+    } else {
+        debug!(
+            "Using default CPU request for container {}: {}",
+            container_spec.hostname, default_cpu_request
+        );
+        default_cpu_request.to_owned()
+    };
 
     limits.insert("cpu".to_string(), Quantity(cpu_limit.to_owned()));
-    // if the limit does not match there's a chance the user changed it, so we don't set requests.
-    // we can probably improve this in the future.
-    if cpu_limit == default_cpu_limit {
-        requests.insert("cpu".to_string(), Quantity(cpu_request));
-    }
+    requests.insert("cpu".to_string(), Quantity(cpu_request));
 
     // Memory
-    let memory_limit = container_spec
-        .resource_limits
-        .as_ref()
-        .and_then(|r| r.memory.clone())
-        .unwrap_or(default_memory_limit.to_owned());
-    let memory_request = container_spec
-        .resource_requests
-        .as_ref()
-        .and_then(|r| r.memory.clone())
-        .unwrap_or(default_memory_request);
+
+    // if the user has set a limit, use that, otherwise use the default from the class
+    let memory_limit = if container_spec.resource_limits.is_some()
+        && container_spec
+            .resource_limits
+            .as_ref()
+            .unwrap()
+            .memory
+            .is_some()
+    {
+        debug!(
+            "Using user-defined memory limit for container {}: {}",
+            container_spec.hostname,
+            container_spec
+                .resource_limits
+                .as_ref()
+                .unwrap()
+                .memory
+                .as_ref()
+                .unwrap()
+        );
+        container_spec
+            .resource_limits
+            .as_ref()
+            .unwrap()
+            .memory
+            .as_ref()
+            .unwrap()
+            .clone()
+    } else {
+        debug!(
+            "Using default memory limit for container {}: {}",
+            container_spec.hostname, default_memory_limit
+        );
+        default_memory_limit.to_owned()
+    };
+
+    // if the user has set a request, use that, otherwise use the default from the class
+    let memory_request = if container_spec.resource_requests.is_some()
+        && container_spec
+            .resource_requests
+            .as_ref()
+            .unwrap()
+            .memory
+            .is_some()
+    {
+        debug!(
+            "Using user-defined memory request for container {}: {}",
+            container_spec.hostname,
+            container_spec
+                .resource_requests
+                .as_ref()
+                .unwrap()
+                .memory
+                .as_ref()
+                .unwrap()
+        );
+        container_spec
+            .resource_requests
+            .as_ref()
+            .unwrap()
+            .memory
+            .as_ref()
+            .unwrap()
+            .clone()
+    } else {
+        debug!(
+            "Using default memory request for container {}: {}",
+            container_spec.hostname, default_memory_request
+        );
+        default_memory_request.to_owned()
+    };
 
     limits.insert("memory".to_string(), Quantity(memory_limit.to_owned()));
-    // if the limit does not match there's a chance the user changed it, so we don't set requests.
-    // we can probably improve this in the future.
-    if memory_limit == default_memory_limit {
-        requests.insert("memory".to_string(), Quantity(memory_request));
-    }
+    requests.insert("memory".to_string(), Quantity(memory_request));
 
     if container_spec.enable_kvm {
         limits.insert(

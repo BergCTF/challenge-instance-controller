@@ -10,7 +10,7 @@ use k8s_openapi::{
         apps::v1::{Deployment, DeploymentSpec},
         core::v1::{
             Capabilities, Container, EnvVar, Pod, PodSpec, PodTemplateSpec, ResourceRequirements,
-            SecurityContext,
+            SecurityContext, Toleration,
         },
     },
     apimachinery::pkg::{api::resource::Quantity, apis::meta::v1::LabelSelector},
@@ -168,7 +168,7 @@ fn build_deployment(
     }
 
     // Build resource requirements
-    let resources = build_resources(container_spec, class);
+    let resources: ResourceRequirements = build_resources(container_spec, class);
 
     // Build security context
     let security_context = build_security_context(container_spec);
@@ -234,6 +234,21 @@ fn build_deployment(
         "false".to_string(),
     );
 
+    let mut tolerations = None;
+    let mut node_selector = None;
+
+    if container_spec.enable_kvm {
+        tolerations = Some(vec![Toleration {
+            key: Some("dedicated".to_string()),
+            value: Some("kvm".to_string()),
+            effect: Some("NoSchedule".to_string()),
+            operator: None,
+            toleration_seconds: None,
+        }]);
+
+        node_selector = Some(BTreeMap::from([("kvm".to_string(), "true".to_string())]));
+    }
+
     // Build pod template
     let pod_template = PodTemplateSpec {
         metadata: Some(kube::api::ObjectMeta {
@@ -246,6 +261,8 @@ fn build_deployment(
             ..Default::default()
         }),
         spec: Some(PodSpec {
+            node_selector,
+            tolerations,
             hostname: Some(container_name.clone()),
             containers: vec![container],
             volumes: if volumes.is_empty() {
@@ -337,41 +354,100 @@ fn build_resources(
         .unwrap_or_else(|| "128Mi".to_string());
 
     // CPU
-    let cpu_limit = container_spec
+
+    // if the user has set a limit, use that, otherwise use the default from the class
+    let cpu_limit = if let Some(cpu_limit) = container_spec
         .resource_limits
         .as_ref()
-        .and_then(|r| r.cpu.clone())
-        .unwrap_or(default_cpu_limit.to_owned());
-    let cpu_request = container_spec
+        .and_then(|limits| limits.cpu.as_ref())
+    {
+        debug!(
+            "Using user-defined CPU limit for container {}: {}",
+            container_spec.hostname, cpu_limit
+        );
+        cpu_limit.clone()
+    } else {
+        debug!(
+            "Using default CPU limit for container {}: {}",
+            container_spec.hostname, default_cpu_limit
+        );
+        default_cpu_limit.to_owned()
+    };
+
+    // if the user has set a request, use that, otherwise use the default from the class
+    let cpu_request = if let Some(cpu_request) = container_spec
         .resource_requests
         .as_ref()
-        .and_then(|r| r.cpu.clone())
-        .unwrap_or(default_cpu_request);
+        .and_then(|requests| requests.cpu.as_ref())
+    {
+        debug!(
+            "Using user-defined CPU request for container {}: {}",
+            container_spec.hostname, cpu_request
+        );
+        cpu_request.clone()
+    } else {
+        debug!(
+            "Using default CPU request for container {}: {}",
+            container_spec.hostname, default_cpu_request
+        );
+        default_cpu_request.to_owned()
+    };
 
     limits.insert("cpu".to_string(), Quantity(cpu_limit.to_owned()));
-    // if the limit does not match there's a chance the user changed it, so we don't set requests.
-    // we can probably improve this in the future.
-    if cpu_limit == default_cpu_limit {
-        requests.insert("cpu".to_string(), Quantity(cpu_request));
-    }
+    requests.insert("cpu".to_string(), Quantity(cpu_request));
 
     // Memory
-    let memory_limit = container_spec
+
+    // if the user has set a limit, use that, otherwise use the default from the class
+    let memory_limit = if let Some(memory_limit) = container_spec
         .resource_limits
         .as_ref()
-        .and_then(|r| r.memory.clone())
-        .unwrap_or(default_memory_limit.to_owned());
-    let memory_request = container_spec
+        .and_then(|limits| limits.memory.as_ref())
+    {
+        debug!(
+            "Using user-defined memory limit for container {}: {}",
+            container_spec.hostname, memory_limit
+        );
+        memory_limit.clone()
+    } else {
+        debug!(
+            "Using default memory limit for container {}: {}",
+            container_spec.hostname, default_memory_limit
+        );
+        default_memory_limit.to_owned()
+    };
+
+    // if the user has set a request, use that, otherwise use the default from the class
+    let memory_request = if let Some(memory_request) = container_spec
         .resource_requests
         .as_ref()
-        .and_then(|r| r.memory.clone())
-        .unwrap_or(default_memory_request);
+        .and_then(|requests| requests.memory.as_ref())
+    {
+        debug!(
+            "Using user-defined memory request for container {}: {}",
+            container_spec.hostname, memory_request
+        );
+        memory_request.clone()
+    } else {
+        debug!(
+            "Using default memory request for container {}: {}",
+            container_spec.hostname, default_memory_request
+        );
+        default_memory_request.to_owned()
+    };
 
     limits.insert("memory".to_string(), Quantity(memory_limit.to_owned()));
-    // if the limit does not match there's a chance the user changed it, so we don't set requests.
-    // we can probably improve this in the future.
-    if memory_limit == default_memory_limit {
-        requests.insert("memory".to_string(), Quantity(memory_request));
+    requests.insert("memory".to_string(), Quantity(memory_request));
+
+    if container_spec.enable_kvm {
+        limits.insert(
+            "nfits.de/devices-kvm".to_string(),
+            Quantity("1".to_string()),
+        );
+        requests.insert(
+            "nfits.de/devices-kvm".to_string(),
+            Quantity("1".to_string()),
+        );
     }
 
     ResourceRequirements {

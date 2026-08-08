@@ -87,6 +87,8 @@ pub struct ContainerSpec {
     pub liveness_probe: Option<serde_json::Value>,
     pub egress_bandwidth: Option<String>,
     pub ingress_bandwidth: Option<String>,
+    #[serde(default)]
+    pub enable_kvm: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]

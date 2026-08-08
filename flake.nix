@@ -94,10 +94,11 @@
               pkgs.cargo-machete
               pkgs.cargo-edit
               pkgs.cargo-insta
+              pkgs.cargo-deny
 
-              pkgs.cargo
-              pkgs.rustc
-              pkgs.rust-bin.beta.latest.default
+              (pkgs.rust-bin.beta.latest.default.override {
+                extensions = [ "rust-src" ];
+              })
             ]
             ++ enabledPackages;
           };

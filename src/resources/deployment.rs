@@ -9,8 +9,8 @@ use k8s_openapi::{
     api::{
         apps::v1::{Deployment, DeploymentSpec},
         core::v1::{
-            Capabilities, Container, EnvVar, NodeSelector, Pod, PodSpec, PodTemplateSpec,
-            ResourceRequirements, SecurityContext, Toleration,
+            Capabilities, Container, EnvVar, Pod, PodSpec, PodTemplateSpec, ResourceRequirements,
+            SecurityContext, Toleration,
         },
     },
     apimachinery::pkg::{api::resource::Quantity, apis::meta::v1::LabelSelector},
@@ -261,8 +261,8 @@ fn build_deployment(
             ..Default::default()
         }),
         spec: Some(PodSpec {
-            node_selector: node_selector,
-            tolerations: tolerations,
+            node_selector,
+            tolerations,
             hostname: Some(container_name.clone()),
             containers: vec![container],
             volumes: if volumes.is_empty() {
@@ -356,33 +356,16 @@ fn build_resources(
     // CPU
 
     // if the user has set a limit, use that, otherwise use the default from the class
-    let cpu_limit = if container_spec.resource_limits.is_some()
-        && container_spec
-            .resource_limits
-            .as_ref()
-            .unwrap()
-            .cpu
-            .is_some()
+    let cpu_limit = if let Some(cpu_limit) = container_spec
+        .resource_limits
+        .as_ref()
+        .and_then(|limits| limits.cpu.as_ref())
     {
         debug!(
             "Using user-defined CPU limit for container {}: {}",
-            container_spec.hostname,
-            container_spec
-                .resource_limits
-                .as_ref()
-                .unwrap()
-                .cpu
-                .as_ref()
-                .unwrap()
+            container_spec.hostname, cpu_limit
         );
-        container_spec
-            .resource_limits
-            .as_ref()
-            .unwrap()
-            .cpu
-            .as_ref()
-            .unwrap()
-            .clone()
+        cpu_limit.clone()
     } else {
         debug!(
             "Using default CPU limit for container {}: {}",
@@ -392,33 +375,16 @@ fn build_resources(
     };
 
     // if the user has set a request, use that, otherwise use the default from the class
-    let cpu_request = if container_spec.resource_requests.is_some()
-        && container_spec
-            .resource_requests
-            .as_ref()
-            .unwrap()
-            .cpu
-            .is_some()
+    let cpu_request = if let Some(cpu_request) = container_spec
+        .resource_requests
+        .as_ref()
+        .and_then(|requests| requests.cpu.as_ref())
     {
         debug!(
             "Using user-defined CPU request for container {}: {}",
-            container_spec.hostname,
-            container_spec
-                .resource_requests
-                .as_ref()
-                .unwrap()
-                .cpu
-                .as_ref()
-                .unwrap()
+            container_spec.hostname, cpu_request
         );
-        container_spec
-            .resource_requests
-            .as_ref()
-            .unwrap()
-            .cpu
-            .as_ref()
-            .unwrap()
-            .clone()
+        cpu_request.clone()
     } else {
         debug!(
             "Using default CPU request for container {}: {}",
@@ -433,33 +399,16 @@ fn build_resources(
     // Memory
 
     // if the user has set a limit, use that, otherwise use the default from the class
-    let memory_limit = if container_spec.resource_limits.is_some()
-        && container_spec
-            .resource_limits
-            .as_ref()
-            .unwrap()
-            .memory
-            .is_some()
+    let memory_limit = if let Some(memory_limit) = container_spec
+        .resource_limits
+        .as_ref()
+        .and_then(|limits| limits.memory.as_ref())
     {
         debug!(
             "Using user-defined memory limit for container {}: {}",
-            container_spec.hostname,
-            container_spec
-                .resource_limits
-                .as_ref()
-                .unwrap()
-                .memory
-                .as_ref()
-                .unwrap()
+            container_spec.hostname, memory_limit
         );
-        container_spec
-            .resource_limits
-            .as_ref()
-            .unwrap()
-            .memory
-            .as_ref()
-            .unwrap()
-            .clone()
+        memory_limit.clone()
     } else {
         debug!(
             "Using default memory limit for container {}: {}",
@@ -469,33 +418,16 @@ fn build_resources(
     };
 
     // if the user has set a request, use that, otherwise use the default from the class
-    let memory_request = if container_spec.resource_requests.is_some()
-        && container_spec
-            .resource_requests
-            .as_ref()
-            .unwrap()
-            .memory
-            .is_some()
+    let memory_request = if let Some(memory_request) = container_spec
+        .resource_requests
+        .as_ref()
+        .and_then(|requests| requests.memory.as_ref())
     {
         debug!(
             "Using user-defined memory request for container {}: {}",
-            container_spec.hostname,
-            container_spec
-                .resource_requests
-                .as_ref()
-                .unwrap()
-                .memory
-                .as_ref()
-                .unwrap()
+            container_spec.hostname, memory_request
         );
-        container_spec
-            .resource_requests
-            .as_ref()
-            .unwrap()
-            .memory
-            .as_ref()
-            .unwrap()
-            .clone()
+        memory_request.clone()
     } else {
         debug!(
             "Using default memory request for container {}: {}",

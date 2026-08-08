@@ -156,7 +156,7 @@ mod tests {
     use std::{
         fs::{File, Permissions},
         io::Write,
-        os::{self, unix::fs::PermissionsExt},
+        os::unix::fs::PermissionsExt,
         path::Path,
         process::Command,
     };
@@ -208,13 +208,13 @@ mod tests {
 
         let path = Path::new("/dev/shm/elf");
         {
-            let mut file = File::create(&path).unwrap();
+            let mut file = File::create(path).unwrap();
             file.set_permissions(Permissions::from_mode(0o777)).unwrap();
             file.write_all(&elf).unwrap();
             file.flush().unwrap();
         }
 
-        let result = Command::new(&path).output().unwrap();
+        let result = Command::new(path).output().unwrap();
         // std::fs::remove_file(&path).unwrap();
         assert!(flag == String::from_utf8(result.stdout).unwrap());
     }

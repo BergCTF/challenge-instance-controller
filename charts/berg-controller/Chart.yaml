@@ -2,8 +2,8 @@ apiVersion: v2
 name: berg-controller
 description: Kubernetes controller for managing Berg CTF challenge instances
 type: application
-version: 0.1.0
-appVersion: 0.1.0
+version: 1.0.2
+appVersion: "1.0.2"
 keywords:
   - berg
   - kubernetes

@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/BergCTF/challenge-instance-controller/compare/v1.0.1...v1.0.2) (2026-08-08)
+
+
+### Bug Fixes
+
+* ci ([#4](https://github.com/BergCTF/challenge-instance-controller/issues/4)) ([7dd4549](https://github.com/BergCTF/challenge-instance-controller/commit/7dd4549a525ac7936cbf528f9abf1196d8603e5c))
+
 ## [1.0.1](https://github.com/BergCTF/challenge-instance-controller/compare/v1.0.0...v1.0.1) (2026-02-07)
 
 

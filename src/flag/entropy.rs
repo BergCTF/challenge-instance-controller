@@ -7,7 +7,7 @@ pub fn substitute_entropy(path: &str) -> String {
     }
 
     let entropy: String = (0..12)
-        .map(|_| format!("{:x}", rand::thread_rng().gen_range(0..16)))
+        .map(|_| format!("{:x}", rand::rng().random_range(0..16)))
         .collect();
 
     path.replace("{entropy}", &entropy)

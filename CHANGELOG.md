@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/BergCTF/challenge-instance-controller/compare/v1.0.3...v1.0.4) (2026-10-07)
+
+
+### Bug Fixes
+
+* properly store semantic release outputs ([83acaf1](https://github.com/BergCTF/challenge-instance-controller/commit/83acaf18f66630215d067ccf57a04203b7bdf177))
+
 ## [1.0.3](https://github.com/BergCTF/challenge-instance-controller/compare/v1.0.2...v1.0.3) (2026-10-07)
 
 

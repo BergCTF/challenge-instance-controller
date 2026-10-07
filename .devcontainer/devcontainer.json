@@ -1,0 +1,4 @@
+{
+	"name": "BergCTF Challenge Instance Controller",
+	"image": "mcr.microsoft.com/devcontainers/rust:2-1-trixie"
+}

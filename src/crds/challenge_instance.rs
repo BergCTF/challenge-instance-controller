@@ -5,9 +5,6 @@ use serde::{Deserialize, Serialize};
 use crate::date_time::DateTime;
 
 /// ChallengeInstance is the primary resource managed by this controller
-/// It is cluster scoped since it manages namespaces
-/// In the future, it may be beneficial to expose a namespace scoped challenge instance to allow
-/// individual challenge authors to instance their challenges
 #[derive(CustomResource, Serialize, Deserialize, Clone, Debug, JsonSchema)]
 #[kube(
     group = "berg.norelect.ch",
@@ -17,7 +14,7 @@ use crate::date_time::DateTime;
     singular = "challengeinstance",
     shortname = "ci",
     shortname = "instance",
-    namespaced = false,
+    namespaced = true,
     status = "ChallengeInstanceStatus",
     printcolumn = r#"{"name":"Challenge", "type":"string", "jsonPath":".spec.challengeRef.name"}"#,
     printcolumn = r#"{"name":"Owner", "type":"string", "jsonPath":".spec.ownerId"}"#,

@@ -249,7 +249,7 @@ spec:
     - ci
     - instance
     singular: challengeinstance
-  scope: Cluster
+  scope: Namespaced
   versions:
   - additionalPrinterColumns:
     - jsonPath: .spec.challengeRef.name
@@ -276,11 +276,7 @@ spec:
         description: Auto-generated derived type for ChallengeInstanceSpec via `CustomResource`
         properties:
           spec:
-            description: |-
-              ChallengeInstance is the primary resource managed by this controller
-              It is cluster scoped since it manages namespaces
-              In the future, it may be beneficial to expose a namespace scoped challenge instance to allow
-              individual challenge authors to instance their challenges
+            description: ChallengeInstance is the primary resource managed by this controller
             properties:
               challengeRef:
                 description: Reference to the Challenge resource
@@ -450,7 +446,7 @@ spec:
     kind: ChallengeInstanceClass
     plural: challengeinstanceclasses
     singular: challengeinstanceclass
-  scope: Cluster
+  scope: Namespaced
   versions:
   - additionalPrinterColumns:
     - jsonPath: .spec.gateway.name

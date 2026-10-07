@@ -30,6 +30,7 @@ fn datetime_schema(_gen: &mut SchemaGenerator) -> Schema {
     group = "berg.norelect.ch",
     version = "v1",
     kind = "Challenge",
+    shortname = "chall",
     namespaced
 )]
 #[serde(rename_all = "camelCase")]

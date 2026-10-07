@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/BergCTF/challenge-instance-controller/compare/v1.0.2...v1.0.3) (2026-10-07)
+
+
+### Bug Fixes
+
+* restore chall shortname ([4990e62](https://github.com/BergCTF/challenge-instance-controller/commit/4990e62393466123d50d7b1eb95ddc33560fee51))
+
 ## [1.0.2](https://github.com/BergCTF/challenge-instance-controller/compare/v1.0.1...v1.0.2) (2026-08-08)
 
 

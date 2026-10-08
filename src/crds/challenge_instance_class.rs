@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
     group = "berg.norelect.ch",
     version = "v1",
     kind = "ChallengeInstanceClass",
-    namespaced = false,
+    namespaced = true,
     printcolumn = r#"{"name": "Gateway", "type": "string", "jsonPath": ".spec.gateway.name"}"#,
     printcolumn = r#"{"name": "Default", "type": "boolean", "jsonPath": ".spec.default"}"#,
     printcolumn = r#"{"name": "Age", "type": "date", "jsonPath": ".metadata.creationTimestamp"}"#

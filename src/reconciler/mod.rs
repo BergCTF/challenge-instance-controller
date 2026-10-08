@@ -91,14 +91,12 @@ pub async fn reconcile(instance: Arc<ChallengeInstance>, ctx: Arc<Context>) -> R
 }
 
 async fn fetch_challenge(instance: &ChallengeInstance, ctx: &Context) -> Result<Challenge> {
-    // challenge instances are cluster scoped since they affect namespace creation
-    // let instance_ns = instance.namespace().unwrap().to_string();
     let challenge_ns = instance
         .spec
         .challenge_ref
         .namespace
         .as_deref()
-        .unwrap_or("berg");
+        .unwrap_or(ctx.client.default_namespace());
 
     let challenges: Api<Challenge> = Api::namespaced(ctx.client.clone(), challenge_ns);
 
@@ -118,7 +116,8 @@ async fn fetch_instance_class(
     instance: &ChallengeInstance,
     ctx: &Context,
 ) -> Result<ChallengeInstanceClass> {
-    let classes: Api<ChallengeInstanceClass> = Api::all(ctx.client.clone());
+    let classes: Api<ChallengeInstanceClass> =
+        Api::namespaced(ctx.client.clone(), ctx.client.default_namespace());
 
     // Use specified class or default
     let class_name = instance
@@ -136,7 +135,8 @@ async fn fetch_instance_class(
 }
 
 async fn add_finalizer(instance: Arc<ChallengeInstance>, ctx: Arc<Context>) -> Result<Action> {
-    let api: Api<ChallengeInstance> = Api::all(ctx.client.clone());
+    let api: Api<ChallengeInstance> =
+        Api::namespaced(ctx.client.clone(), ctx.client.default_namespace());
 
     let mut finalizers = instance.meta().finalizers.clone().unwrap_or_default();
     finalizers.push(FINALIZER.to_string());
@@ -187,7 +187,8 @@ pub async fn update_status<F>(instance: &ChallengeInstance, ctx: &Context, mutat
 where
     F: FnOnce(&mut ChallengeInstanceStatus),
 {
-    let api: Api<ChallengeInstance> = Api::all(ctx.client.clone());
+    let api: Api<ChallengeInstance> =
+        Api::namespaced(ctx.client.clone(), ctx.client.default_namespace());
 
     let mut status = instance.status.clone().unwrap_or_default();
     mutate(&mut status);

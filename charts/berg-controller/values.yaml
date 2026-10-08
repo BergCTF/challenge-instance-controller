@@ -47,7 +47,8 @@ instanceClass:
   # Image pull configuration
   imagePull:
     policy: "Always"
-    # secretName: ""
+    # secretNames:
+    #  - ""
 
   # Security configuration
   # security:

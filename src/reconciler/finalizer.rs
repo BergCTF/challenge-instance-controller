@@ -112,7 +112,8 @@ pub async fn cleanup(instance: Arc<ChallengeInstance>, ctx: Arc<Context>) -> Res
 }
 
 async fn remove_finalizer(instance: &ChallengeInstance, ctx: &Context) -> Result<()> {
-    let api: Api<ChallengeInstance> = Api::all(ctx.client.clone());
+    let api: Api<ChallengeInstance> =
+        Api::namespaced(ctx.client.clone(), ctx.client.default_namespace());
 
     let mut finalizers = instance.metadata.finalizers.clone().unwrap_or_default();
     finalizers.retain(|f| f != FINALIZER);

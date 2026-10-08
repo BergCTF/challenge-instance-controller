@@ -541,9 +541,11 @@ spec:
                 nullable: true
                 properties:
                   policy:
+                    description: Image Pull Policy
                     default: Always
                     type: string
                   secretNames:
+                    description: Image Pull Secret Names
                     default: []
                     items:
                       type: string

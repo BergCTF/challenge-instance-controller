@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/BergCTF/challenge-instance-controller/compare/v1.1.0...v1.1.1) (2026-10-08)
+
+
+### Bug Fixes
+
+* typo in values.yaml ([50b54c0](https://github.com/BergCTF/challenge-instance-controller/commit/50b54c002236aba2265c1f0d07774856c9e33f81))
+
 # [1.1.0](https://github.com/BergCTF/challenge-instance-controller/compare/v1.0.4...v1.1.0) (2026-10-08)
 
 

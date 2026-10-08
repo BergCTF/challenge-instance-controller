@@ -35,8 +35,8 @@ spec:
   {{- if .Values.instanceClass.imagePull }}
   imagePull:
     policy: {{ .Values.instanceClass.imagePull.policy }}
-    {{- if .Values.instanceClass.imagePull.secretName }}
-    secretName: {{ .Values.instanceClass.imagePull.secretName }}
+    {{- if .Values.instanceClass.imagePull.secretNames }}
+    secretNames: {{ .Values.instanceClass.imagePull.secretNames }}
     {{- end }}
   {{- end }}
   {{- if .Values.instanceClass.security }}

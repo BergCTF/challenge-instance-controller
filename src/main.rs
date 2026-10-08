@@ -34,7 +34,8 @@ async fn main() -> anyhow::Result<()> {
         metrics,
     });
 
-    let instances = kube::Api::<ChallengeInstance>::all(client.clone());
+    let instances =
+        kube::Api::<ChallengeInstance>::namespaced(client.clone(), ctx.client.default_namespace());
 
     // instances owned by the controller. this is used to trigger reconciliations of parent
     // resources if child resources change

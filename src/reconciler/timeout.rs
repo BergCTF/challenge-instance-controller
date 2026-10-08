@@ -93,7 +93,8 @@ pub async fn terminate_expired(
     info!("Instance {} has expired, terminating", instance.name_any());
     ctx.metrics.record_timeout();
 
-    let api: Api<ChallengeInstance> = Api::all(ctx.client.clone());
+    let api: Api<ChallengeInstance> =
+        Api::namespaced(ctx.client.clone(), ctx.client.default_namespace());
 
     // Set termination reason and delete
     let patch = serde_json::json!({

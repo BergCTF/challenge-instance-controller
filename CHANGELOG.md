@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/BergCTF/challenge-instance-controller/compare/v1.0.4...v1.1.0) (2026-10-08)
+
+
+### Features
+
+* migrate-to-namespaced-challenge-instances ([479167c](https://github.com/BergCTF/challenge-instance-controller/commit/479167cafff114b78f30aa4fd93505f3f29bf00f))
+
 ## [1.0.4](https://github.com/BergCTF/challenge-instance-controller/compare/v1.0.3...v1.0.4) (2026-10-07)
 
 

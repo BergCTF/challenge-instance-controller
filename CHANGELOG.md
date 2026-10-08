@@ -1,3 +1,11 @@
+## [1.1.2](https://github.com/BergCTF/challenge-instance-controller/compare/v1.1.1...v1.1.2) (2026-10-08)
+
+
+### Bug Fixes
+
+* **ci:** helm oci push ([e9a5a1d](https://github.com/BergCTF/challenge-instance-controller/commit/e9a5a1d96d48f900d1a2e48afa56acfd5833376a))
+* remove owner refernces, since they don't work across namespaces ([667ad9c](https://github.com/BergCTF/challenge-instance-controller/commit/667ad9c1f7b8df5d225c4008919891faeaef6d06))
+
 ## [1.1.1](https://github.com/BergCTF/challenge-instance-controller/compare/v1.1.0...v1.1.1) (2026-10-08)
 
 

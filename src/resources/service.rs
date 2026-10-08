@@ -1,19 +1,10 @@
 use crate::{
-    crds::{
-        Challenge, ChallengeInstance, ChallengeInstanceClass, ContainerSpec, PortSpec, PortType,
-        ServiceEndpoint,
-    },
+    crds::{Challenge, ChallengeInstanceClass, ContainerSpec, PortSpec, PortType, ServiceEndpoint},
     error::Result,
     reconciler::Context,
 };
-use k8s_openapi::{
-    api::core::v1::{Service, ServicePort, ServiceSpec},
-    apimachinery::pkg::apis::meta::v1::OwnerReference,
-};
-use kube::{
-    api::{Api, PostParams},
-    Resource,
-};
+use k8s_openapi::api::core::v1::{Service, ServicePort, ServiceSpec};
+use kube::api::{Api, PostParams};
 use std::collections::BTreeMap;
 use tracing::{debug, info};
 
@@ -21,7 +12,6 @@ use tracing::{debug, info};
 /// if the service already exists it returns Ok without attempting to mutate the object
 pub async fn reconcile(
     class: &ChallengeInstanceClass,
-    instance: &ChallengeInstance,
     _challenge: &Challenge,
     container: &ContainerSpec,
     namespace: &str,
@@ -40,7 +30,6 @@ pub async fn reconcile(
             namespace,
             &container.hostname,
             &container.ports,
-            instance.controller_owner_ref(&()).unwrap(),
         );
 
         match api.create(&PostParams::default(), &svc).await {
@@ -67,7 +56,6 @@ pub async fn reconcile(
             namespace,
             &container.hostname,
             &node_ports,
-            instance.controller_owner_ref(&()).unwrap(),
         );
         let svc = api.create(&PostParams::default(), &svc).await;
 
@@ -114,13 +102,11 @@ fn make_svc(
     namespace: &str,
     hostname: &str,
     ports: &[PortSpec],
-    oref: OwnerReference,
 ) -> Service {
     Service {
         metadata: kube::api::ObjectMeta {
             name: Some(name.to_owned()),
             namespace: Some(namespace.to_string()),
-            owner_references: Some(vec![oref]),
             labels: Some({
                 let mut labels = BTreeMap::new();
                 labels.insert(

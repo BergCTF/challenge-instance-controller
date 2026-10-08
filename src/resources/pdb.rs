@@ -1,27 +1,15 @@
-use crate::{
-    crds::{ChallengeInstance, ContainerSpec},
-    error::Result,
-    reconciler::Context,
-};
+use crate::{crds::ContainerSpec, error::Result, reconciler::Context};
 use k8s_openapi::{
     api::policy::v1::{PodDisruptionBudget, PodDisruptionBudgetSpec},
     apimachinery::pkg::{apis::meta::v1::LabelSelector, util::intstr::IntOrString},
 };
-use kube::{
-    api::{Api, PostParams},
-    Resource,
-};
+use kube::api::{Api, PostParams};
 use std::collections::BTreeMap;
 use tracing::{debug, info};
 
 /// reconcile attempts to create pdbs for the given workload
 /// if the pdb already exists it returns Ok without attempting to mutate the object
-pub async fn reconcile(
-    instance: &ChallengeInstance,
-    container: &ContainerSpec,
-    namespace: &str,
-    ctx: &Context,
-) -> Result<()> {
+pub async fn reconcile(container: &ContainerSpec, namespace: &str, ctx: &Context) -> Result<()> {
     let api: Api<PodDisruptionBudget> = Api::namespaced(ctx.client.clone(), namespace);
 
     let pdb_name = format!("{}-pdb", container.hostname);
@@ -29,7 +17,6 @@ pub async fn reconcile(
     let pdb = PodDisruptionBudget {
         metadata: kube::api::ObjectMeta {
             name: Some(pdb_name.clone()),
-            owner_references: Some(vec![instance.controller_owner_ref(&()).unwrap()]),
             namespace: Some(namespace.to_string()),
             ..Default::default()
         },

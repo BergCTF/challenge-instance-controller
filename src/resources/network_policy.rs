@@ -4,17 +4,13 @@ use crate::{
             entities, CiliumDnsRule, CiliumEgressRule, CiliumL7Rule, CiliumPortProtocol,
             CiliumPortRule,
         },
-        Challenge, ChallengeInstance, ChallengeInstanceClass, CiliumNetworkPolicy,
-        CiliumNetworkPolicySpec,
+        Challenge, ChallengeInstanceClass, CiliumNetworkPolicy, CiliumNetworkPolicySpec,
     },
     error::{Error, Result},
     reconciler::Context,
 };
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::LabelSelector;
-use kube::{
-    api::{Api, PostParams},
-    Resource,
-};
+use kube::api::{Api, PostParams};
 use std::collections::BTreeMap;
 use tracing::{debug, info};
 
@@ -22,7 +18,6 @@ use tracing::{debug, info};
 /// if a CiliumNetworkPolicy with that name already exists it returns Ok
 /// it does not attempt to mutate existing policies
 pub async fn reconcile(
-    instance: &ChallengeInstance,
     challenge: &Challenge,
     namespace: &str,
     class: &ChallengeInstanceClass,
@@ -107,7 +102,6 @@ pub async fn reconcile(
         metadata: kube::api::ObjectMeta {
             name: Some("challenge-network-policy".to_string()),
             namespace: Some(namespace.to_string()),
-            owner_references: Some(vec![instance.controller_owner_ref(&()).unwrap()]),
             labels: Some({
                 let mut labels = BTreeMap::new();
                 labels.insert(

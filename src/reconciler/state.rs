@@ -75,8 +75,7 @@ pub async fn reconcile_creating(
     );
 
     resources::namespace::reconcile(&instance, &namespace_name, &ctx).await?;
-    resources::network_policy::reconcile(&instance, &challenge, &namespace_name, &class, &ctx)
-        .await?;
+    resources::network_policy::reconcile(&challenge, &namespace_name, &class, &ctx).await?;
 
     if let Some(ref image_pull) = class.spec.image_pull {
         for secret in &image_pull.secret_names {
@@ -89,15 +88,8 @@ pub async fn reconcile_creating(
     for container in &challenge.spec.containers {
         // Services
         endpoints.extend(
-            resources::service::reconcile(
-                &class,
-                &instance,
-                &challenge,
-                container,
-                &namespace_name,
-                &ctx,
-            )
-            .await?,
+            resources::service::reconcile(&class, &challenge, container, &namespace_name, &ctx)
+                .await?,
         );
 
         // Gateway API routes
@@ -135,7 +127,7 @@ pub async fn reconcile_creating(
         }
 
         // PodDisruptionBudget
-        resources::pdb::reconcile(&instance, container, &namespace_name, &ctx).await?;
+        resources::pdb::reconcile(container, &namespace_name, &ctx).await?;
     }
 
     // first create all services, then create deployments

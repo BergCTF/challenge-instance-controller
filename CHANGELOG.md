@@ -1,3 +1,10 @@
+## [1.1.3](https://github.com/BergCTF/challenge-instance-controller/compare/v1.1.2...v1.1.3) (2026-10-08)
+
+
+### Bug Fixes
+
+* do not create endpoint vars for ports without explicit names ([233cc94](https://github.com/BergCTF/challenge-instance-controller/commit/233cc94683ef74f48e1c7ac514f52e2a18f891df))
+
 ## [1.1.2](https://github.com/BergCTF/challenge-instance-controller/compare/v1.1.1...v1.1.2) (2026-10-08)
 
 

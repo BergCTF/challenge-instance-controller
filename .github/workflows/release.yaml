@@ -125,4 +125,4 @@ jobs:
         run: |
           CHART_DIR=$(find charts -mindepth 1 -maxdepth 1 -type d | head -1)
           helm package "$CHART_DIR"
-          helm push ./*.tgz oci://${{ env.REGISTRY }}/${{ github.repository }}/charts
+          helm push ./*.tgz oci://${{ env.REGISTRY }}/bergctf/charts

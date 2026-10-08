@@ -91,13 +91,11 @@ fn build_deployment(
 
     for container in &challenge.spec.containers {
         for port in &container.ports {
-            let env_name = format!(
-                "{}_ENDPOINT",
-                port.name
-                    .to_owned()
-                    .unwrap_or(port.port.to_string())
-                    .to_uppercase()
-            );
+            if port.name.is_none() {
+                continue;
+            }
+
+            let env_name = format!("{}_ENDPOINT", port.name.to_owned().unwrap().to_uppercase());
             let service_name = format!(
                 "{}-{}",
                 container.hostname,

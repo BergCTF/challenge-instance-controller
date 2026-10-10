@@ -1,3 +1,10 @@
+## [1.1.4](https://github.com/BergCTF/challenge-instance-controller/compare/v1.1.3...v1.1.4) (2026-10-10)
+
+
+### Bug Fixes
+
+* ensure that integration tests pass ([28f9a45](https://github.com/BergCTF/challenge-instance-controller/commit/28f9a451cde82ebb7cba6248b8d5472eb1d0125a))
+
 ## [1.1.3](https://github.com/BergCTF/challenge-instance-controller/compare/v1.1.2...v1.1.3) (2026-10-08)
 
 

@@ -78,11 +78,20 @@ async fn main() -> anyhow::Result<()> {
             match res {
                 Ok(o) => debug!("Reconciled: {:?}", o),
                 // if the object cannot be found it was likely deleted. we can ignore this.
-                Err(kube::runtime::controller::Error::ObjectNotFound(_)) => {}
+                Err(kube::runtime::controller::Error::ObjectNotFound(ref o)) => {
+                    debug!(
+                        "Skipping reconcile, object no longer present in store: {:?}",
+                        o
+                    )
+                }
                 Err(e) => tracing::warn!("[!] Reconciliation error: {:?}", e),
             }
         })
         .await;
+
+    // The controller stream only terminates on shutdown (or if the watch queue
+    // is torn down); the process is about to exit, so make it visible in logs.
+    info!("Controller stream terminated, shutting down");
 
     let _ = shutdown_tx.send(());
     let _ = handle.join();

@@ -275,17 +275,68 @@ pub async fn reconcile_starting(
     }
 }
 
-/// Running phase - monitor health
+/// Running phase - monitor workload health until the instance expires.
 pub async fn reconcile_running(
     instance: Arc<ChallengeInstance>,
     _challenge: Challenge,
     _class: ChallengeInstanceClass,
     ctx: Arc<Context>,
 ) -> Result<Action> {
-    if super::timeout::is_expired(&instance) {
-        return super::timeout::terminate_expired(instance, ctx).await;
+    let namespace = instance
+        .status
+        .as_ref()
+        .and_then(|s| s.namespace.clone())
+        .unwrap_or_default();
+
+    if !namespace.is_empty() {
+        let pods = resources::deployment::list_managed_pods(&ctx.client, &namespace).await?;
+        let all_ready = !pods.is_empty() && pods.iter().all(resources::deployment::is_pod_ready);
+
+        if all_ready {
+            debug!(
+                "Workload healthy for instance {} in {}",
+                instance.name_any(),
+                namespace
+            );
+        } else if pods.is_empty() {
+            // The workload (or its namespace) is no longer present
+            super::record_terminal_failure(
+                &instance,
+                &ctx,
+                "WorkloadLost",
+                &format!("Workload no longer present in namespace {namespace}"),
+            )
+            .await?;
+            return Ok(Action::await_change());
+        } else {
+            // Pods exist but are not ready: surface degraded state and retry soon
+            let now = chrono::Utc::now();
+            update_status(&instance, &ctx, |status| {
+                if let Some(cond) = status
+                    .conditions
+                    .iter_mut()
+                    .find(|c| c.r#type == "PodsReady")
+                {
+                    cond.status = ConditionStatus::False;
+                    cond.last_transition_time = Some(DateTime::from(now));
+                    cond.reason = Some("NotReady".to_string());
+                    cond.message = Some("Pods not ready while running".to_string());
+                } else {
+                    status.conditions.push(Condition {
+                        r#type: "PodsReady".to_string(),
+                        status: ConditionStatus::False,
+                        last_transition_time: Some(DateTime::from(now)),
+                        reason: Some("NotReady".to_string()),
+                        message: Some("Pods not ready while running".to_string()),
+                    });
+                }
+            })
+            .await?;
+            return Ok(Action::requeue(Duration::from_secs(10)));
+        }
     }
 
+    // Healthy (or nothing to monitor): schedule the next wakeup at expiration
     let expires_at_dt = instance
         .status
         .as_ref()
@@ -298,13 +349,4 @@ pub async fn reconcile_running(
         .min(Duration::from_secs(600));
 
     Ok(Action::requeue(duration))
-}
-
-/// Terminating phase
-pub async fn reconcile_terminating(
-    instance: Arc<ChallengeInstance>,
-    ctx: Arc<Context>,
-) -> Result<Action> {
-    // This is handled by the finalizer
-    super::finalizer::cleanup(instance, ctx).await
 }

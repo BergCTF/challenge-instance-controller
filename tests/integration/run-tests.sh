@@ -31,12 +31,12 @@ log_error() {
 
 pass_test() {
     echo -e "${GREEN}[PASS]${NC} $1"
-    ((TESTS_PASSED++))
+    TESTS_PASSED=$((TESTS_PASSED + 1))
 }
 
 fail_test() {
     echo -e "${RED}[FAIL]${NC} $1"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 }
 
 cleanup_test_resources() {
@@ -65,6 +65,7 @@ test_operator_deployment() {
         --set image.pullPolicy=IfNotPresent \
         --set config.challengeNamespace="$TEST_NS" \
         --set config.challengeDomain="test.local" \
+        --set logLevel=debug \
         --wait --timeout=60s; then
         pass_test "Operator deployed successfully"
     else
@@ -75,7 +76,7 @@ test_operator_deployment() {
     fi
 
     # Wait for operator pod to be ready
-    if kubectl wait --for=condition=Read pod -lapp.kubernetes.io/name=berg-controller -n $TEST_NS --timeout 60s; then
+    if kubectl wait --for=condition=Ready pod -lapp.kubernetes.io/name=berg-controller -n $TEST_NS --timeout 60s; then
         pass_test "Operator pod is ready"
     else
         fail_test "Operator pod failed to become ready"
@@ -133,9 +134,32 @@ test_instance_lifecycle() {
         return 1
     fi
 
-    # Wait for instance to have status
+    # Wait for the instance to be reconciled past the Creating phase.
     log_info "Waiting for instance to be reconciled..."
-    sleep 10
+    local deadline=$(( $(date +%s) + 90 ))
+    local challenge_ns=""
+    while [ "$(date +%s)" -lt "$deadline" ]; do
+        challenge_ns=$(kubectl get challengeinstance test-instance -n "$TEST_NS" -o jsonpath='{.status.namespace}' 2>/dev/null || echo "")
+        [ -n "$challenge_ns" ] && break
+        sleep 2
+    done
+
+    if [ -z "$challenge_ns" ]; then
+        local phase
+        phase=$(kubectl get challengeinstance test-instance -n "$TEST_NS" -o jsonpath='{.status.phase}' 2>/dev/null || echo "?")
+        fail_test "Instance does not have namespace in status after 90s (phase=$phase)"
+        log_info "Instance state:"
+        kubectl get challengeinstance test-instance -n "$TEST_NS" -o yaml || true
+        log_info "Challenge namespaces in cluster:"
+        kubectl get namespaces -l app.kubernetes.io/managed-by=berg --show-labels 2>/dev/null || true
+        log_info "Operator pod status / restarts:"
+        kubectl get pods -l app.kubernetes.io/name=berg-controller -n "$TEST_NS" 2>/dev/null || true
+        log_info "Cluster events:"
+        kubectl get events -n "$TEST_NS" --sort-by='.lastTimestamp' 2>/dev/null | tail -30 || true
+        log_info "Operator logs (last 300 lines):"
+        kubectl logs -l app.kubernetes.io/name=berg-controller -n "$TEST_NS" --tail=300 || true
+        return 1
+    fi
 
     # Check if instance has instanceId
     local instance_id
@@ -149,22 +173,10 @@ test_instance_lifecycle() {
         return 1
     fi
 
-    # Check if namespace was created
-    local challenge_ns
-    challenge_ns=$(kubectl get challengeinstance test-instance -n "$TEST_NS" -o jsonpath='{.status.namespace}' 2>/dev/null || echo "")
-
-    if [ -n "$challenge_ns" ]; then
+    if kubectl get namespace "$challenge_ns" &>/dev/null; then
         pass_test "Challenge namespace created: $challenge_ns"
-
-        # Verify namespace exists
-        if kubectl get namespace "$challenge_ns" &>/dev/null; then
-            pass_test "Namespace $challenge_ns exists"
-        else
-            fail_test "Namespace $challenge_ns not found"
-            return 1
-        fi
     else
-        fail_test "Instance does not have namespace in status"
+        fail_test "Namespace $challenge_ns not found"
         return 1
     fi
 }
@@ -230,7 +242,7 @@ test_pod_status() {
     fi
 
     # Wait for pod to be ready
-    if kubectl wait --for=condition=Read pod -l berg.norelect.ch/container=web -n $challenge_ns --timeout 120s; then
+    if kubectl wait --for=condition=Ready pod -l berg.norelect.ch/container=web -n $challenge_ns --timeout 120s; then
         pass_test "Pod is ready"
     else
         fail_test "Pod failed to become ready"

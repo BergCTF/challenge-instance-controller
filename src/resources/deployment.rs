@@ -171,14 +171,14 @@ fn build_deployment(
     // Build security context
     let security_context = build_security_context(container_spec);
 
-    // Build container ports
+    // Build container ports.
     let container_ports = container_spec
         .ports
         .iter()
         .map(|p| k8s_openapi::api::core::v1::ContainerPort {
             name: p.name.clone(),
             container_port: p.port as i32,
-            protocol: Some(p.protocol.to_uppercase()),
+            protocol: Some(crate::resources::service::transport_protocol(&p.protocol)),
             ..Default::default()
         })
         .collect::<Vec<_>>();
@@ -484,44 +484,42 @@ fn build_security_context(container_spec: &ContainerSpec) -> SecurityContext {
     }
 }
 
-pub async fn check_pods_ready(client: &Client, namespace: &str) -> Result<bool> {
+/// List the pods managed by Berg in the given namespace.
+/// Returns an empty list when the namespace does not (yet) exist.
+pub async fn list_managed_pods(client: &Client, namespace: &str) -> Result<Vec<Pod>> {
     let pods: Api<Pod> = Api::namespaced(client.clone(), namespace);
-
     let lp = ListParams::default().labels("app.kubernetes.io/managed-by=berg");
 
-    let pod_list = pods.list(&lp).await?;
-
-    if pod_list.items.is_empty() {
-        return Ok(false);
+    match pods.list(&lp).await {
+        Ok(list) => Ok(list.items),
+        // The namespace is gone (or was never created) — no workloads to manage.
+        Err(kube::Error::Api(ae)) if ae.code == 404 => Ok(Vec::new()),
+        Err(e) => Err(e.into()),
     }
+}
 
-    for pod in pod_list.items {
-        if let Some(status) = pod.status {
-            // Check phase
-            if status.phase.as_deref() != Some("Running") {
-                return Ok(false);
-            }
-
-            // Check conditions
-            if let Some(conditions) = status.conditions {
-                let ready = conditions
-                    .iter()
-                    .find(|c| c.type_ == "Ready")
-                    .map(|c| c.status == "True")
-                    .unwrap_or(false);
-
-                if !ready {
-                    return Ok(false);
-                }
-            } else {
-                return Ok(false);
-            }
-        } else {
-            return Ok(false);
-        }
+/// A pod is ready when its phase is `Running` and its `Ready` condition is `True`.
+pub fn is_pod_ready(pod: &Pod) -> bool {
+    let status = match pod.status.as_ref() {
+        Some(s) => s,
+        None => return false,
+    };
+    if status.phase.as_deref() != Some("Running") {
+        return false;
     }
+    match status.conditions.as_ref() {
+        Some(conditions) => conditions
+            .iter()
+            .find(|c| c.type_ == "Ready")
+            .map(|c| c.status == "True")
+            .unwrap_or(false),
+        None => false,
+    }
+}
 
-    Ok(true)
+pub async fn check_pods_ready(client: &Client, namespace: &str) -> Result<bool> {
+    let pods = list_managed_pods(client, namespace).await?;
+    Ok(!pods.is_empty() && pods.iter().all(is_pod_ready))
 }
 
 pub async fn check_pods_healthy(client: &Client, namespace: &str) -> Result<bool> {

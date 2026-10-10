@@ -1,19 +1,22 @@
 use crate::{
     config::ControllerConfig,
-    crds::{Challenge, ChallengeInstance, ChallengeInstanceClass, ChallengeInstanceStatus, Phase},
+    crds::{
+        Challenge, ChallengeInstance, ChallengeInstanceClass, ChallengeInstanceStatus, Condition,
+        ConditionStatus, Phase, TerminationReason,
+    },
     date_time::DateTime,
     error::{Error, Result},
     telemetry::Metrics,
 };
 use kube::{
-    api::{Api, Patch, PatchParams},
+    api::{Api, DeleteParams, Patch, PatchParams},
     client::Client,
     runtime::controller::Action,
     Resource, ResourceExt,
 };
 use std::sync::Arc;
 use std::time::Duration;
-use tracing::{debug, instrument, warn};
+use tracing::{debug, info, instrument, warn};
 
 pub mod finalizer;
 pub mod state;
@@ -61,32 +64,61 @@ pub async fn reconcile(instance: Arc<ChallengeInstance>, ctx: Arc<Context>) -> R
         return initialize_instance(instance, ctx).await;
     }
 
-    // Check timeout expiration
-    if timeout::is_expired(&instance) {
-        return timeout::terminate_expired(instance, ctx).await;
+    // Current phase as stored in status (defaults to Pending when unset)
+    let phase = instance.status.as_ref().and_then(|s| s.phase.as_ref());
+
+    // Terminate when the instance is expired, a termination reason was set,
+    // or it is already in the Terminating phase
+    if timeout::should_terminate(&instance) || matches!(phase, Some(Phase::Terminating)) {
+        return initiate_termination(instance, ctx).await;
+    }
+
+    // Terminal states require no further action
+    if matches!(phase, Some(Phase::Terminated) | Some(Phase::Failed)) {
+        return Ok(Action::await_change());
     }
 
     // Fetch referenced Challenge and ChallengeInstanceClass
-    let challenge = fetch_challenge(&instance, &ctx).await?;
-    let class = fetch_instance_class(&instance, &ctx).await?;
+    let challenge = match fetch_challenge(&instance, &ctx).await {
+        Ok(challenge) => challenge,
+        Err(Error::ChallengeNotFound { namespace, name }) => {
+            record_terminal_failure(
+                &instance,
+                &ctx,
+                "ChallengeMissing",
+                &format!("Challenge {namespace}/{name} not found"),
+            )
+            .await?;
+            return Err(Error::ChallengeNotFound { namespace, name });
+        }
+        Err(e) => return Err(e),
+    };
+
+    let class = match fetch_instance_class(&instance, &ctx).await {
+        Ok(class) => class,
+        Err(Error::InstanceClassNotFound { name }) => {
+            record_terminal_failure(
+                &instance,
+                &ctx,
+                "InstanceClassMissing",
+                &format!("ChallengeInstanceClass {name} not found"),
+            )
+            .await?;
+            return Err(Error::InstanceClassNotFound { name });
+        }
+        Err(e) => return Err(e),
+    };
 
     // Reconcile based on phase
-    let phase = instance
-        .status
-        .as_ref()
-        .and_then(|s| s.phase.as_ref())
-        .unwrap_or(&Phase::Pending);
-
     match phase {
-        Phase::Pending => state::reconcile_pending(instance, challenge, class, ctx).await,
-        Phase::Creating => state::reconcile_creating(instance, challenge, class, ctx).await,
-        Phase::Starting => state::reconcile_starting(instance, challenge, class, ctx).await,
-        Phase::Running => state::reconcile_running(instance, challenge, class, ctx).await,
-        Phase::Terminating => state::reconcile_terminating(instance, ctx).await,
-        Phase::Terminated | Phase::Failed => {
-            // No action needed
-            Ok(Action::await_change())
+        None | Some(Phase::Pending) => {
+            state::reconcile_pending(instance, challenge, class, ctx).await
         }
+        Some(Phase::Creating) => state::reconcile_creating(instance, challenge, class, ctx).await,
+        Some(Phase::Starting) => state::reconcile_starting(instance, challenge, class, ctx).await,
+        Some(Phase::Running) => state::reconcile_running(instance, challenge, class, ctx).await,
+        // Terminating / Terminated / Failed are handled above
+        _ => Ok(Action::await_change()),
     }
 }
 
@@ -162,13 +194,25 @@ async fn initialize_instance(
     ctx: Arc<Context>,
 ) -> Result<Action> {
     let instance_id = uuid::Uuid::new_v4().to_string();
-    let expires_at = timeout::calculate_expiry(
+    let expires_at = match timeout::calculate_expiry(
         instance
             .spec
             .timeout
             .as_ref()
             .unwrap_or(&ctx.config.default_timeout),
-    )?;
+    ) {
+        Ok(expires_at) => expires_at,
+        Err(e) => {
+            record_terminal_failure(
+                &instance,
+                &ctx,
+                "InvalidTimeout",
+                &format!("Could not parse timeout: {e}"),
+            )
+            .await?;
+            return Err(e);
+        }
+    };
 
     update_status(&instance, &ctx, |status| {
         status.instance_id = Some(instance_id);
@@ -180,6 +224,110 @@ async fn initialize_instance(
 
     ctx.metrics.incr_active_instances();
     Ok(Action::requeue(Duration::from_secs(1)))
+}
+
+/// Transition the instance to the `Terminating` phase and delete it so the
+/// finalizer performs cleanup. Idempotent: when the instance is already in a
+/// terminating/terminal phase the status update is skipped and only the
+/// deletion completion is ensured.
+pub async fn initiate_termination(
+    instance: Arc<ChallengeInstance>,
+    ctx: Arc<Context>,
+) -> Result<Action> {
+    let name = instance.name_any();
+    let reason = termination_reason(&instance);
+    info!(
+        "Initiating termination for instance {} ({:?})",
+        name, reason
+    );
+
+    let current_phase = instance
+        .status
+        .as_ref()
+        .and_then(|s| s.phase.as_ref())
+        .cloned();
+
+    if !matches!(
+        current_phase,
+        Some(Phase::Terminating) | Some(Phase::Terminated) | Some(Phase::Failed)
+    ) {
+        let message = match reason {
+            TerminationReason::Timeout => "Instance has expired".to_string(),
+            TerminationReason::UserRequest => "Termination requested by user".to_string(),
+            TerminationReason::AdminTermination => {
+                "Termination requested by administrator".to_string()
+            }
+        };
+        if reason == TerminationReason::Timeout {
+            ctx.metrics.record_timeout();
+        }
+        update_status(&instance, &ctx, |status| {
+            status.phase = Some(Phase::Terminating);
+            status.conditions.push(Condition {
+                r#type: "Terminating".to_string(),
+                status: ConditionStatus::True,
+                last_transition_time: Some(DateTime::now()),
+                reason: Some(format!("{reason:?}")),
+                message: Some(message),
+            });
+        })
+        .await?;
+    }
+
+    // Ensure the instance is deleted so the finalizer runs
+    if instance.meta().deletion_timestamp.is_none() {
+        let api: Api<ChallengeInstance> =
+            Api::namespaced(ctx.client.clone(), ctx.client.default_namespace());
+        api.delete(&name, &DeleteParams::default()).await?;
+        info!("Deleted instance {}", name);
+    }
+
+    Ok(Action::await_change())
+}
+
+/// Derive the reason an instance is being terminated.
+fn termination_reason(instance: &ChallengeInstance) -> TerminationReason {
+    if timeout::is_expired(instance) {
+        TerminationReason::Timeout
+    } else if let Some(reason) = &instance.spec.termination_reason {
+        reason.clone()
+    } else {
+        TerminationReason::UserRequest
+    }
+}
+
+/// Record a terminal failure on the instance: set phase to `Failed` and add a
+/// condition. No-op when the instance is already in a terminal phase.
+pub async fn record_terminal_failure(
+    instance: &ChallengeInstance,
+    ctx: &Context,
+    reason: &str,
+    message: &str,
+) -> Result<()> {
+    let current_phase = instance
+        .status
+        .as_ref()
+        .and_then(|s| s.phase.as_ref())
+        .cloned();
+
+    if matches!(
+        current_phase,
+        Some(Phase::Terminating) | Some(Phase::Terminated) | Some(Phase::Failed)
+    ) {
+        return Ok(());
+    }
+
+    update_status(instance, ctx, |status| {
+        status.phase = Some(Phase::Failed);
+        status.conditions.push(Condition {
+            r#type: "Failed".to_string(),
+            status: ConditionStatus::False,
+            last_transition_time: Some(DateTime::now()),
+            reason: Some(reason.to_string()),
+            message: Some(message.to_string()),
+        });
+    })
+    .await
 }
 
 /// Helper to update status

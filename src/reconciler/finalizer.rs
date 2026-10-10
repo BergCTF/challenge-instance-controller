@@ -41,13 +41,32 @@ pub async fn cleanup(instance: Arc<ChallengeInstance>, ctx: Arc<Context>) -> Res
     // Clean up workloads before cleaning up NetworkPolicies
     let deployments_api: Api<Deployment> = Api::namespaced(ctx.client.clone(), &namespace_name);
     let pods_api: Api<Pod> = Api::namespaced(ctx.client.clone(), &namespace_name);
+
+    let deployments = match deployments_api.list(&ListParams::default()).await {
+        Ok(list) => list.items,
+        Err(kube::Error::Api(ae)) if ae.code == 404 => {
+            debug!(
+                "Namespace {} does not exist, skipping workload cleanup",
+                namespace_name
+            );
+            Vec::new()
+        }
+        Err(e) => return Err(e.into()),
+    };
+
     let mut deleting = false;
-    for deploy in deployments_api.list(&ListParams::default()).await? {
+    for deploy in deployments {
         deleting = true;
         let selectors = deploy.spec.unwrap().selector;
-        if pods_api
+        let pods = match pods_api
             .list(&ListParams::default().labels_from(&selectors.try_into().unwrap()))
-            .await?
+            .await
+        {
+            Ok(list) => list.items,
+            Err(kube::Error::Api(ae)) if ae.code == 404 => Vec::new(),
+            Err(e) => return Err(e.into()),
+        };
+        if pods
             .iter()
             .any(|p| p.status.to_owned().unwrap().phase.unwrap() != "Terminating")
         {

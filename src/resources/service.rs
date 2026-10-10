@@ -96,6 +96,14 @@ pub async fn reconcile(
     Ok(endpoints)
 }
 
+pub fn transport_protocol(protocol: &str) -> String {
+    match protocol.to_uppercase().as_str() {
+        "UDP" => "UDP".to_string(),
+        "SCTP" => "SCTP".to_string(),
+        _ => "TCP".to_string(),
+    }
+}
+
 fn make_svc(
     name: &str,
     service_type: &str,
@@ -138,7 +146,7 @@ fn make_svc(
                                 .to_owned(),
                         ),
                         port: p.port as i32,
-                        protocol: Some(p.protocol.to_uppercase()),
+                        protocol: Some(transport_protocol(&p.protocol)),
                         ..Default::default()
                     })
                     .collect(),
@@ -146,5 +154,27 @@ fn make_svc(
             ..Default::default()
         }),
         ..Default::default()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::transport_protocol;
+
+    #[test]
+    fn transport_protocol_maps_to_supported_values() {
+        // Application protocols are not valid on Service ports or
+        // container ports; they must translate to a transport protocol.
+        assert_eq!(transport_protocol("http"), "TCP");
+        assert_eq!(transport_protocol("HTTP"), "TCP");
+        assert_eq!(transport_protocol("grpc"), "TCP");
+        // Transport protocols pass through (upper-cased).
+        assert_eq!(transport_protocol("tcp"), "TCP");
+        assert_eq!(transport_protocol("udp"), "UDP");
+        assert_eq!(transport_protocol("sctp"), "SCTP");
+        // The dual protocol is not accepted on container ports.
+        assert_eq!(transport_protocol("tcp|udp"), "TCP");
+        // Unknown/empty defaults to TCP.
+        assert_eq!(transport_protocol(""), "TCP");
     }
 }

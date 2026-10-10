@@ -30,14 +30,15 @@ impl Metrics {
     }
 }
 
+fn build_env_filter() -> tracing_subscriber::EnvFilter {
+    tracing_subscriber::EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("berg_operator=info,kube=info"))
+}
+
 #[cfg(not(debug_assertions))]
 pub fn init() {
     tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::from_default_env()
-                .add_directive("berg_operator=info".parse().unwrap())
-                .add_directive("kube=info".parse().unwrap()),
-        )
+        .with_env_filter(build_env_filter())
         .json()
         .init();
 }
@@ -49,10 +50,6 @@ pub fn init() {
         .without_time()
         .with_file(false)
         .with_line_number(false)
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::from_default_env()
-                .add_directive("berg_operator=info".parse().unwrap())
-                .add_directive("kube=info".parse().unwrap()),
-        )
+        .with_env_filter(build_env_filter())
         .init();
 }

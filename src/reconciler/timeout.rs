@@ -1,17 +1,6 @@
-use crate::{
-    crds::{ChallengeInstance, TerminationReason},
-    error::{Error, Result},
-};
+use crate::crds::ChallengeInstance;
+use crate::error::{Error, Result};
 use chrono::{Duration, Utc};
-use kube::{
-    api::{Api, DeleteParams},
-    runtime::controller::Action,
-    ResourceExt,
-};
-use std::sync::Arc;
-use tracing::info;
-
-use super::Context;
 
 /// Check if an instance has expired
 pub fn is_expired(instance: &ChallengeInstance) -> bool {
@@ -85,36 +74,10 @@ fn parse_timeout(timeout_str: &str) -> Result<Duration> {
     })
 }
 
-/// Terminate an expired instance
-pub async fn terminate_expired(
-    instance: Arc<ChallengeInstance>,
-    ctx: Arc<Context>,
-) -> Result<Action> {
-    info!("Instance {} has expired, terminating", instance.name_any());
-    ctx.metrics.record_timeout();
-
-    let api: Api<ChallengeInstance> =
-        Api::namespaced(ctx.client.clone(), ctx.client.default_namespace());
-
-    // Set termination reason and delete
-    let patch = serde_json::json!({
-        "spec": {
-            "terminationReason": TerminationReason::Timeout
-        }
-    });
-
-    api.patch(
-        &instance.name_any(),
-        &kube::api::PatchParams::default(),
-        &kube::api::Patch::Merge(&patch),
-    )
-    .await?;
-
-    // Delete the instance (will trigger finalizer)
-    api.delete(&instance.name_any(), &DeleteParams::default())
-        .await?;
-
-    Ok(Action::await_change())
+/// Determine whether an instance should be terminated: either it has
+/// expired, or a termination reason has been set in the spec.
+pub fn should_terminate(instance: &ChallengeInstance) -> bool {
+    is_expired(instance) || instance.spec.termination_reason.is_some()
 }
 
 #[cfg(test)]

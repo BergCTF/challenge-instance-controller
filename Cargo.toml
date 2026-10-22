@@ -55,4 +55,7 @@ tracing-subscriber = { version = "0.3", features = [
 
 # Random for entropy
 rand = "0.9"
-gateway-api = "0.22.0"
+gateway-api = {
+    git = "https://github.com/cfi2017/gateway-api-rs.git",
+    branch = "chore/v1-6"
+}

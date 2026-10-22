@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/BergCTF/challenge-instance-controller/compare/v1.1.4...v1.2.0) (2026-10-22)
+
+
+### Features
+
+* switch to gateway api crate ([#16](https://github.com/BergCTF/challenge-instance-controller/issues/16)) ([16cb47b](https://github.com/BergCTF/challenge-instance-controller/commit/16cb47b11185f1f4b666471bc3f3744deca2b1d5))
+
 ## [1.1.4](https://github.com/BergCTF/challenge-instance-controller/compare/v1.1.3...v1.1.4) (2026-10-10)
 
 

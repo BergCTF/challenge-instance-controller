@@ -14,18 +14,18 @@ fn main() {
 
     // Challenge CRD
     let challenge_crd =
-        serde_yaml::to_string(&Challenge::crd()).expect("Failed to serialize Challenge CRD");
+        serde_saphyr::to_string(&Challenge::crd()).expect("Failed to serialize Challenge CRD");
     println!("{}", challenge_crd.trim());
     println!("---");
 
     // ChallengeInstance CRD
-    let instance_crd = serde_yaml::to_string(&ChallengeInstance::crd())
+    let instance_crd = serde_saphyr::to_string(&ChallengeInstance::crd())
         .expect("Failed to serialize ChallengeInstance CRD");
     println!("{}", instance_crd.trim());
     println!("---");
 
     // ChallengeInstanceClass CRD
-    let class_crd = serde_yaml::to_string(&ChallengeInstanceClass::crd())
+    let class_crd = serde_saphyr::to_string(&ChallengeInstanceClass::crd())
         .expect("Failed to serialize ChallengeInstanceClass CRD");
     println!("{}", class_crd.trim());
 }

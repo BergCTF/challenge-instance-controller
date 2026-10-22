@@ -2,7 +2,6 @@ pub mod challenge;
 pub mod challenge_instance;
 pub mod challenge_instance_class;
 pub mod cilium;
-pub mod gateway;
 
 // Re-export types
 pub use challenge::{
@@ -20,8 +19,4 @@ pub use challenge_instance_class::{
 pub use cilium::{
     CiliumDnsRule, CiliumEgressRule, CiliumFQDNRule, CiliumL7Rule, CiliumNetworkPolicy,
     CiliumNetworkPolicySpec, CiliumPortProtocol, CiliumPortRule,
-};
-pub use gateway::{
-    BackendRef, HTTPBackendRef, HTTPRoute, HTTPRouteRule, HTTPRouteSpec, ParentReference, TLSRoute,
-    TLSRouteRule, TLSRouteSpec,
 };

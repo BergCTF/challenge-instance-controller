@@ -1,11 +1,15 @@
 use crate::{
-    crds::{
-        BackendRef, ChallengeInstance, ChallengeInstanceClass, ContainerSpec, HTTPBackendRef,
-        HTTPRoute, HTTPRouteRule, HTTPRouteSpec, ParentReference, PortType, ServiceEndpoint,
-        TLSRoute, TLSRouteRule, TLSRouteSpec,
-    },
+    crds::{ChallengeInstance, ChallengeInstanceClass, ContainerSpec, PortType, ServiceEndpoint},
     error::{Error, Result},
     reconciler::Context,
+};
+use gateway_api::{
+    httproutes::{
+        HttpRoute, HttpRouteParentRefs, HttpRouteRules, HttpRouteRulesBackendRefs, HttpRouteSpec,
+    },
+    tlsroutes::{
+        TlsRoute, TlsRouteParentRefs, TlsRouteRules, TlsRouteRulesBackendRefs, TlsRouteSpec,
+    },
 };
 use kube::api::{Api, PostParams};
 use std::collections::BTreeMap;
@@ -21,7 +25,7 @@ pub async fn create_http_routes(
     class: &ChallengeInstanceClass,
     ctx: &Context,
 ) -> Result<Vec<ServiceEndpoint>> {
-    let api: Api<HTTPRoute> = Api::namespaced(ctx.client.clone(), namespace);
+    let api: Api<HttpRoute> = Api::namespaced(ctx.client.clone(), namespace);
 
     let mut endpoints = Vec::new();
 
@@ -32,7 +36,7 @@ pub async fn create_http_routes(
 
             let route_name = format!("{}-{}", container.hostname, port.port);
 
-            let route = HTTPRoute {
+            let route = HttpRoute {
                 metadata: kube::api::ObjectMeta {
                     name: Some(route_name.clone()),
                     namespace: Some(namespace.to_string()),
@@ -62,9 +66,9 @@ pub async fn create_http_routes(
                     }),
                     ..Default::default()
                 },
-                spec: HTTPRouteSpec {
+                spec: HttpRouteSpec {
                     hostnames: Some(vec![hostname.clone()]),
-                    parent_refs: Some(vec![ParentReference {
+                    parent_refs: Some(vec![HttpRouteParentRefs {
                         group: None,
                         kind: Some("Gateway".to_string()),
                         namespace: Some(class.spec.gateway.namespace.clone()),
@@ -72,19 +76,21 @@ pub async fn create_http_routes(
                         section_name: Some(class.spec.gateway.http_listener_name.clone()),
                         port: None,
                     }]),
-                    rules: Some(vec![HTTPRouteRule {
+                    rules: Some(vec![HttpRouteRules {
                         name: None,
-                        backend_refs: Some(vec![HTTPBackendRef {
+                        backend_refs: Some(vec![HttpRouteRulesBackendRefs {
                             group: None,
                             kind: None,
                             namespace: Some(namespace.to_string()),
                             name: container.hostname.clone(),
                             port: Some(port.port as i32),
                             weight: None,
+                            ..Default::default()
                         }]),
-                        filters: None,
+                        ..Default::default()
                     }]),
                 },
+                ..Default::default()
             };
 
             match api.create(&PostParams::default(), &route).await {
@@ -123,7 +129,7 @@ pub async fn create_tls_routes(
     class: &ChallengeInstanceClass,
     ctx: &Context,
 ) -> Result<Vec<ServiceEndpoint>> {
-    let api: Api<TLSRoute> = Api::namespaced(ctx.client.clone(), namespace);
+    let api: Api<TlsRoute> = Api::namespaced(ctx.client.clone(), namespace);
     let mut endpoints = Vec::new();
 
     for port in &container.ports {
@@ -133,7 +139,7 @@ pub async fn create_tls_routes(
 
             let route_name = format!("{}-{}", container.hostname, port.port);
 
-            let route = TLSRoute {
+            let route = TlsRoute {
                 metadata: kube::api::ObjectMeta {
                     name: Some(route_name.clone()),
                     namespace: Some(namespace.to_string()),
@@ -163,9 +169,9 @@ pub async fn create_tls_routes(
                     }),
                     ..Default::default()
                 },
-                spec: TLSRouteSpec {
-                    hostnames: Some(vec![hostname.clone()]),
-                    parent_refs: Some(vec![ParentReference {
+                spec: TlsRouteSpec {
+                    hostnames: vec![hostname.clone()],
+                    parent_refs: Some(vec![TlsRouteParentRefs {
                         group: None,
                         kind: Some("Gateway".to_string()),
                         namespace: Some(class.spec.gateway.namespace.clone()),
@@ -173,18 +179,19 @@ pub async fn create_tls_routes(
                         section_name: Some(class.spec.gateway.tls_listener_name.clone()),
                         port: None,
                     }]),
-                    rules: Some(vec![TLSRouteRule {
-                        name: route_name.clone(),
-                        backend_refs: Some(vec![BackendRef {
+                    rules: vec![TlsRouteRules {
+                        name: Some(route_name.clone()),
+                        backend_refs: vec![TlsRouteRulesBackendRefs {
                             group: None,
                             kind: None,
                             namespace: Some(namespace.to_string()),
                             name: container.hostname.clone(),
                             port: Some(port.port as i32),
                             weight: None,
-                        }]),
-                    }]),
+                        }],
+                    }],
                 },
+                ..Default::default()
             };
 
             match api.create(&PostParams::default(), &route).await {
@@ -194,7 +201,7 @@ pub async fn create_tls_routes(
                 Err(kube::Error::Api(ae)) if ae.code == 409 => {
                     debug!("TLSRoute {} already exists", route_name);
                     let route = api.get(&route.metadata.name.unwrap()).await?;
-                    hostname = route.spec.hostnames.unwrap().first().unwrap().to_owned();
+                    hostname = route.spec.hostnames.first().unwrap().to_owned();
                 }
                 Err(e) => return Err(Error::from(e)),
             }

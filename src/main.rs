@@ -1,10 +1,11 @@
 use berg_operator::{
     config::ControllerConfig,
-    crds::{ChallengeInstance, CiliumNetworkPolicy, HTTPRoute, TLSRoute},
+    crds::{ChallengeInstance, CiliumNetworkPolicy},
     reconciler::{self, Context},
     telemetry::{self, Metrics},
 };
 use futures::StreamExt;
+use gateway_api::{httproutes::HttpRoute, tlsroutes::TlsRoute};
 use k8s_openapi::api::{
     apps::v1::Deployment,
     core::v1::{ConfigMap, Namespace, Secret, Service},
@@ -46,8 +47,8 @@ async fn main() -> anyhow::Result<()> {
     let np = Api::<CiliumNetworkPolicy>::all(client.to_owned());
     let pdb = Api::<PodDisruptionBudget>::all(client.to_owned());
     let services = Api::<Service>::all(client.to_owned());
-    let http_routes = Api::<HTTPRoute>::all(client.to_owned());
-    let tls_routes = Api::<TLSRoute>::all(client.to_owned());
+    let http_routes = Api::<HttpRoute>::all(client.to_owned());
+    let tls_routes = Api::<TlsRoute>::all(client.to_owned());
 
     let (mut reload_tx, reload_rx) = futures::channel::mpsc::channel(0);
     let (shutdown_tx, shutdown_rx) = std::sync::mpsc::channel::<()>();
